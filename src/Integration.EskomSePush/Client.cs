@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http.Json;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Net.Http.Json;
 using EnsureThat;
-using Integration.EskomSePush.Models.Response;
+using Integration.EskomSePush.Models.Responses;
 
 namespace Integration.EskomSePush
 {
@@ -23,9 +18,30 @@ namespace Integration.EskomSePush
             _httpClient.DefaultRequestHeaders.Add("Token", espLicenceKey);
         }
 
-        public StatusResponse? GetStatus(string id)
+        public StatusResponse? GetStatus()
         {
-            var task = InternalGetAsync<StatusResponse>("status");
+            return (StatusResponse?)GetResponse<StatusResponse>("status");
+        }
+
+        public AllowanceResponse? GetAllowance()
+        {
+            return (AllowanceResponse?)GetResponse<AllowanceResponse>("api_allowance");
+        }
+
+        public AreaResponse? GetArea(string id)
+        {
+            return (AreaResponse?)GetResponse<AreaResponse>("area", id);
+        }
+
+        private Response? GetResponse<TResponse>(string path, string? id = null) 
+            where TResponse : Response
+        {
+            if (id is not null)
+            {
+                path = path.ToQueryString(new System.Collections.Specialized.NameValueCollection { { "id", id } });
+            }
+
+            var task = InternalGetAsync<StatusResponse>(path);
 
             Task.WaitAll(task);
 

@@ -2,7 +2,7 @@
 
 namespace Integration.EskomSePush.Models.Responses;
 
-public class StatusResponse
+public class StatusResponse : Response
 {
     public StatusDetailResponse Eskom { get; set; }
 

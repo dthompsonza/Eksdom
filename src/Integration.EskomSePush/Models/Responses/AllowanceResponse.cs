@@ -2,7 +2,7 @@
 
 namespace Integration.EskomSePush.Models.Responses;
 
-public class AllowanceResponse
+public class AllowanceResponse : Response
 {
     public int Count { get; set; }
     
