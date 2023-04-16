@@ -17,9 +17,9 @@ internal static class Extensions
         return $"{path}?{GetEncodedQueryString(parameters)}";
     }
 
-    internal static string Hash(this string input)
+    internal static string Hash(this string input, string salt)
     {
-        var inputBytes = Encoding.UTF8.GetBytes(input);
+        var inputBytes = Encoding.UTF8.GetBytes(input + salt);
         using MD5 md5 = MD5.Create();
         var hashBytes = md5.ComputeHash(inputBytes);
         var hash = BitConverter.ToString(hashBytes).Replace("-", "").ToLower();

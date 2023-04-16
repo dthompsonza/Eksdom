@@ -2,7 +2,7 @@
 
 public interface IResponseCache : IDisposable
 {
-    public void Add<TResponse>(string key, TResponse value, TimeSpan duration)
+    public void Add<TResponse>(string key, TResponse value, TimeSpan duration = default)
         where TResponse : ResponseModel;
 
     public bool TryGet<TResponse>(string key, out TResponse? value)

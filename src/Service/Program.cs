@@ -6,6 +6,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Integration.EskomSePush;
 using EnsureThat;
+using Microsoft.Extensions.Caching.Memory;
+using Eksdom.EskomSePush.Client;
+using Eksdom.Service.Caching;
 
 namespace Eksdom.Service;
 
@@ -15,13 +18,30 @@ class Program
     {
         var licenceKey = Environment.GetEnvironmentVariable("EKSDOM_ESP_API_KEY", EnvironmentVariableTarget.Machine);
         Ensure.That(licenceKey).IsNotNullOrEmpty();
-        var client = Client.Create(licenceKey!);
+        var cache = new FileResponseCache();
+        var options = new ApiClientOptions(licenceKey!)
+        {
+            ResponseCache = cache,
+        };
+        var client = ApiClient.Create(options);
 
         //var allowance = await client.GetAllowanceAsync();
 
-        var area = client.GetArea("westerncape-14-parklands");
+        var allowance = client.GetAllowance();
+        Console.WriteLine($"Before any calls - {allowance}");
+        var area = client.GetAreaInformation("westerncape-14-parklands");
+        Console.WriteLine(area);
+        allowance = client.GetAllowance();
+        Console.WriteLine($"After 1 call - {allowance}");
+        var area2 = client.GetAreaInformation("westerncape-14-parklands");
+        Console.WriteLine(area2);
 
+        allowance = client.GetAllowance();
+        Console.WriteLine($"After 2 calls - {allowance}");
         Console.ReadKey();
+
+        var m = new MemoryCache(new MemoryCacheOptions());
+
         //await Host.CreateDefaultBuilder(args)
         //    .UseWindowsService()
         //    .ConfigureServices((hostContext, services) =>

@@ -1,6 +1,7 @@
 ﻿using System.Collections.Specialized;
 using System.Net;
 using System.Text.Json;
+using Eksdom.EskomSePush.Client;
 using EnsureThat;
 using Integration.EskomSePush.Models.Responses;
 using Integration.EskomSePush.Models.Responses.Caching;
@@ -9,64 +10,48 @@ namespace Integration.EskomSePush;
 
 public sealed partial class ApiClient : IDisposable
 {
-    private static ApiClient? _instance;
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+    private static ApiClient _instance;
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
     private readonly HttpClient _httpClient;
     private readonly ApiTestModes _testMode;
-    private readonly TimeSpan _cacheDuration;
-    private readonly IResponseCache _responseCache;
+    private readonly TimeSpan? _cacheDuration;
+    private readonly IResponseCache? _responseCache;
+    private readonly string _licenceKey;
 
-    private const int DefaultCacheHours = 2;
-
-    private ApiClient(string espLicenceKey,
-        ApiTestModes testMode,
-        TimeSpan? cacheDuration,
-        HttpClient? httpClient,
-        IResponseCache? responseCache)
+    private ApiClient(ApiClientOptions clientOptions)
     {
-        Ensure.That(espLicenceKey).IsNotNullOrEmpty();
+        Ensure.That(clientOptions.LicenceKey).IsNotNullOrEmpty();
+        _licenceKey = clientOptions.LicenceKey;
 
-        _testMode = testMode;
-        _httpClient = httpClient is null ? new HttpClient
+        _testMode = clientOptions.TestMode;
+        _httpClient = clientOptions.httpClient ?? new HttpClient
         {
             BaseAddress = new Uri(Constants.Api20Uri),
-        } : httpClient;
+        };
 
-        _httpClient.DefaultRequestHeaders.Add(Constants.Headers.Token, espLicenceKey);
+        _httpClient.DefaultRequestHeaders.Add(Constants.Headers.Token, _licenceKey);
         _httpClient.DefaultRequestHeaders.Add(Constants.Headers.Client, Constants.ClientDescription);
 
-        _cacheDuration = cacheDuration is null
-            ? TimeSpan.FromHours(DefaultCacheHours)
-            : cacheDuration!.Value.Seconds == 0 ? TimeSpan.FromHours(DefaultCacheHours) : cacheDuration!.Value;
-
-        _responseCache = responseCache is null ? new MemoryResponseCache() : responseCache;
+        if (clientOptions.ResponseCache is not null)
+        {
+            _responseCache = clientOptions.ResponseCache;
+            _cacheDuration = clientOptions.CacheDuration;
+        }
     }
 
     private ResponseModel? GetResponse<TResponse>(string path, string? id = null, bool cache = true)
         where TResponse : ResponseModel
     {
-        if (cache)
-        {
-            if (_responseCache.TryGet<TResponse>(BuildCacheName(path, id), out var cachedModel))
-            {
-                if (cachedModel is not null)
-                {
-                    return cachedModel;
-                }
-            }
-        }
-        var task = InternalGetAsync<TResponse>(BuildPath(path, id!));
+        var task = InternalGetAsync<TResponse>(BuildPath(path, id!), cache);
 
-        Task.WaitAll(task);
+        task.Wait();
 
         if (task.IsCompleted &&
             task.Result.success &&
             task.Result.model is not null)
         {
-            if (cache)
-            {
-                _responseCache.Add(BuildCacheName(path, id), task.Result.model!, _cacheDuration);
-            }
             return task.Result.model!;
         }
 
@@ -76,7 +61,7 @@ public sealed partial class ApiClient : IDisposable
     private async Task<ResponseModel?> GetResponseAsync<TResponse>(string path, string? id = null, bool cache = true)
         where TResponse : ResponseModel
     {
-        var response = await InternalGetAsync<TResponse>(BuildPath(path, id!));
+        var response = await InternalGetAsync<TResponse>(BuildPath(path, id!), cache);
 
         if (response.success)
         {
@@ -86,34 +71,20 @@ public sealed partial class ApiClient : IDisposable
         return null;
     }
 
-    private string BuildPath(string path, string? id)
+    private async Task<(bool success, TResponse? model)> InternalGetAsync<TResponse>(string requestUri, bool cache)
+        where TResponse : ResponseModel
     {
-        if (id is null && _testMode == ApiTestModes.None)
+        if (cache && _responseCache is not null)
         {
-            return path;
+            if (_responseCache.TryGet<TResponse>(BuildCacheName(requestUri), out var cachedModel))
+            {
+                if (cachedModel is not null)
+                {
+                    return (true, cachedModel);
+                }
+            }
         }
 
-        var nmc = new NameValueCollection();
-
-        if (_testMode != ApiTestModes.None)
-        {
-            nmc.Add(Constants.QueryParams.Test, _testMode == ApiTestModes.Current ? Constants.Testing.Current : Constants.Testing.Future);
-        }
-        if (id is not null)
-        {
-            nmc.Add(Constants.QueryParams.Id, id);
-        }
-
-        return path.ToQueryString(nmc);
-    }
-
-    private string BuildCacheName(string path, string? id)
-    {
-        return $"{path}-{id ?? "NoID"}".Hash();
-    }
-
-    private async Task<(bool success, TModel? model)> InternalGetAsync<TModel>(string requestUri)
-    {
         var response = await _httpClient.GetAsync(requestUri);
 
         if (!response.IsSuccessStatusCode)
@@ -135,9 +106,41 @@ public sealed partial class ApiClient : IDisposable
             IgnoreReadOnlyProperties = true,
         };
 
-        var model = JsonSerializer.Deserialize<TModel>(responseString, options);
+        var model = JsonSerializer.Deserialize<TResponse>(responseString, options);
+
+        if (_responseCache is not null && model is not null)
+        {
+            _responseCache.Add(BuildCacheName(requestUri), model, _cacheDuration ?? default);
+        }
+
         return (true, model);
     }
+
+    private string BuildPath(string path, string? id)
+    {
+        if (id is null && _testMode == ApiTestModes.None)
+        {
+            return path;
+        }
+
+        var nmc = new NameValueCollection();
+
+        if (_testMode != ApiTestModes.None)
+        {
+            nmc.Add(Constants.QueryParams.Test, _testMode == ApiTestModes.Current 
+                ? Constants.Testing.Current : Constants.Testing.Future);
+        }
+        if (id is not null)
+        {
+            nmc.Add(Constants.QueryParams.Id, id);
+        }
+
+        return path.ToQueryString(nmc);
+    }
+
+    private string BuildCacheName(string requestUri) => requestUri.Hash(_licenceKey);
+
+    private bool CacheEnabled() => _responseCache is not null;
 
     public void Dispose()
     {

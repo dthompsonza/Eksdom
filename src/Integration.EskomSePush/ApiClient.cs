@@ -1,4 +1,5 @@
-﻿using EnsureThat;
+﻿using Eksdom.EskomSePush.Client;
+using EnsureThat;
 using Integration.EskomSePush.Models.Responses;
 using Integration.EskomSePush.Models.Responses.Caching;
 using Integration.EskomSePush.Models.Results;
@@ -16,28 +17,7 @@ public sealed partial class ApiClient : IDisposable
     #region Static initializers
 
     /// <summary>
-    /// Client will instantiate Singleton HttpClient.
-    /// </summary>
-    /// <param name="espLicenceKey">Obtain licence key from EskomSePush <see href="https://eskomsepush.gumroad.com/l/api"/></param>.
-    /// <param name="testMode">Developer testing option</param>.
-    /// <param name="cacheDuration">Override default http response caching of 2 hours. Set to 0 for no cache.</param>
-    /// <param name="responseCache">Override response caching. Caching is used in conjunction with <see cref="cacheDuration"/></param> to avoid making too many API calls.
-    /// <returns></returns>
-    public static ApiClient Create(string espLicenceKey, 
-        ApiTestModes testMode = default, 
-        TimeSpan cacheDuration = default,
-        IResponseCache? responseCache = null)
-    {
-        if (_instance is null)
-        {
-            _instance = new ApiClient(espLicenceKey, testMode, cacheDuration, httpClient: null, responseCache!);
-        }
-
-        return _instance;
-    }
-
-    /// <summary>
-    /// Supply your own Singleton HttpClient instance. 
+    /// Returns a singleton instance of the api client
     /// </summary>
     /// <param name="espLicenceKey">Obtain licence key from EskomSePush <see href="https://eskomsepush.gumroad.com/l/api"/></param>.
     /// <param name="httpClient">Supplied <see cref="HttpClient"/></param>.
@@ -45,15 +25,11 @@ public sealed partial class ApiClient : IDisposable
     /// <param name="cacheDuration">Override default http response caching of 2 hours</param>.
     /// <param name="responseCache">Override response caching. Caching is used in conjunction with <see cref="cacheDuration"/></param> to avoid making too many API calls.
     /// <returns></returns>
-    public static ApiClient Create(string espLicenceKey,
-        HttpClient httpClient,
-        ApiTestModes testMode = default,
-        TimeSpan cacheDuration = default,
-        IResponseCache? responseCache = null)
+    public static ApiClient Create(ApiClientOptions options)
     {
         if (_instance is null)
         {
-            _instance = new ApiClient(espLicenceKey, testMode, cacheDuration, httpClient, responseCache);
+            _instance = new ApiClient(options);
         }
 
         return _instance;

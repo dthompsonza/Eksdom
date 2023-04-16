@@ -6,6 +6,8 @@ internal static class Constants
 
     public const string ClientDescription = "Eksdom (github.com/dthompsonza/Eksdom)";
 
+    public const int DefaultCacheHours = 2;
+
     public static class Resources
     {
         public const string Allowance = "api_allowance";
