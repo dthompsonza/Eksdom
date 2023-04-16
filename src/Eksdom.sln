@@ -3,9 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.33516.290
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Eksdom.Service", "Service\Eksdom.Service.csproj", "{85C41954-D728-4AE3-960F-81374E5F3279}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Eksdom.Service.Windows", "Service\Eksdom.Service.Windows.csproj", "{85C41954-D728-4AE3-960F-81374E5F3279}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Integration.EskomSePush", "Integration.EskomSePush\Integration.EskomSePush.csproj", "{D95F6458-2877-4E02-B668-90DD455A2521}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Eksdom.EskomSePush.Client", "Integration.EskomSePush\Eksdom.EskomSePush.Client.csproj", "{D95F6458-2877-4E02-B668-90DD455A2521}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eksdom.App.Windows", "Eksdom.App.Windows\Eksdom.App.Windows.csproj", "{CDCEF876-2402-4F99-8223-2DAC6E6B263A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{D95F6458-2877-4E02-B668-90DD455A2521}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D95F6458-2877-4E02-B668-90DD455A2521}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D95F6458-2877-4E02-B668-90DD455A2521}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CDCEF876-2402-4F99-8223-2DAC6E6B263A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CDCEF876-2402-4F99-8223-2DAC6E6B263A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CDCEF876-2402-4F99-8223-2DAC6E6B263A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CDCEF876-2402-4F99-8223-2DAC6E6B263A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
