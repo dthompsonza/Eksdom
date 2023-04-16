@@ -1,5 +1,8 @@
 ﻿namespace Integration.EskomSePush.Models.Responses;
 
-public abstract class Response
+/// <summary>
+/// Marker class
+/// </summary>
+public abstract class ResponseModel
 {
 }

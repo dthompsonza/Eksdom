@@ -1,18 +1,18 @@
 ﻿namespace Integration.EskomSePush
 {
     [Serializable]
-    public  class ClientException : Exception
+    public  class EksdomException : Exception
     {
-        public ClientException() 
+        public EksdomException() 
         { 
         }
 
-        public ClientException(string message)
+        public EksdomException(string message)
             : base(message)
         {
         }
 
-        public ClientException(string message, Exception inner)
+        public EksdomException(string message, Exception inner)
             : base(message, inner)
         {
         }
