@@ -1,9 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using Eksdom.Shared;
 using Integration.EskomSePush.Models.Responses;
-using Integration.EskomSePush.Models.Results;
-using Integration.EskomSePush.Types;
 
 namespace Integration.EskomSePush
 {

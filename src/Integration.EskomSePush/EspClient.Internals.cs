@@ -8,10 +8,10 @@ using Integration.EskomSePush.Models.Responses.Caching;
 
 namespace Integration.EskomSePush;
 
-public sealed partial class ApiClient : IDisposable
+public sealed partial class EspClient : IDisposable
 {
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-    private static ApiClient _instance;
+    private static EspClient _instance;
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
     private readonly HttpClient _httpClient;
@@ -20,7 +20,7 @@ public sealed partial class ApiClient : IDisposable
     private readonly IResponseCache? _responseCache;
     private readonly string _licenceKey;
 
-    private ApiClient(ApiClientOptions clientOptions)
+    private EspClient(EspClientOptions clientOptions)
     {
         Ensure.That(clientOptions.LicenceKey).IsNotNullOrEmpty();
         _licenceKey = clientOptions.LicenceKey;

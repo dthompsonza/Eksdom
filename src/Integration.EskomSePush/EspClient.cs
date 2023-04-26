@@ -1,8 +1,7 @@
 ﻿using Eksdom.EskomSePush.Client;
+using Eksdom.Shared;
 using EnsureThat;
 using Integration.EskomSePush.Models.Responses;
-using Integration.EskomSePush.Models.Responses.Caching;
-using Integration.EskomSePush.Models.Results;
 
 namespace Integration.EskomSePush;
 
@@ -12,7 +11,7 @@ namespace Integration.EskomSePush;
 ///     Documentation on <see href="https://documenter.getpostman.com/view/1296288/UzQuNk3E">Postman Documenter</see>.
 /// </para>
 /// </summary>
-public sealed partial class ApiClient : IDisposable
+public sealed partial class EspClient : IDisposable
 {
     #region Static initializers
 
@@ -25,11 +24,11 @@ public sealed partial class ApiClient : IDisposable
     /// <param name="cacheDuration">Override default http response caching of 2 hours</param>.
     /// <param name="responseCache">Override response caching. Caching is used in conjunction with <see cref="cacheDuration"/></param> to avoid making too many API calls.
     /// <returns></returns>
-    public static ApiClient Create(ApiClientOptions options)
+    public static EspClient Create(EspClientOptions options)
     {
         if (_instance is null)
         {
-            _instance = new ApiClient(options);
+            _instance = new EspClient(options);
         }
 
         return _instance;

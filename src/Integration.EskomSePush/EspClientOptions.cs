@@ -3,7 +3,7 @@ using Integration.EskomSePush.Models.Responses.Caching;
 
 namespace Eksdom.EskomSePush.Client
 {
-    public class ApiClientOptions
+    public class EspClientOptions
     {
         public string LicenceKey { get; }
 
@@ -15,7 +15,7 @@ namespace Eksdom.EskomSePush.Client
 
         public IResponseCache? ResponseCache { get; set; } 
 
-        public ApiClientOptions(string licenceKey)
+        public EspClientOptions(string licenceKey)
         {
             LicenceKey = licenceKey;
         }

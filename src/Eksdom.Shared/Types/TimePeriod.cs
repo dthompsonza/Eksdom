@@ -1,10 +1,14 @@
-﻿using EnsureThat;
+﻿using System.Text.Json.Serialization;
+using Eksdom.Shared.Serialization;
+using EnsureThat;
 
-namespace Integration.EskomSePush.Types;
+namespace Eksdom.Shared;
 
 /// <summary>
 /// A period of time consisting of a <see cref="Start"/> and <see cref="End"/> time
 /// </summary>
+[Serializable]
+[JsonConverter(typeof(TimePeriodJsonConverter))]
 public class TimePeriod : Tuple<TimeOnly, TimeOnly>
 {
     /// <summary>
@@ -59,7 +63,7 @@ public class TimePeriod : Tuple<TimeOnly, TimeOnly>
         var endTime = new DateTime(2000, 1, 2, end.Hour, end.Minute, end.Second);
         var startTime = new DateTime(2000, 1, 1, start.Hour, start.Minute, start.Second);
 
-        return (endTime - startTime).Minutes;
+        return Convert.ToInt32((endTime - startTime).TotalMinutes);
     }
 
     private static int GetMinutesWhenEndIsToday(TimeOnly start, TimeOnly end)
@@ -67,6 +71,6 @@ public class TimePeriod : Tuple<TimeOnly, TimeOnly>
         var endTime = new DateTime(2000, 1, 1, end.Hour, end.Minute, end.Second);
         var startTime = new DateTime(2000, 1, 1, start.Hour, start.Minute, start.Second);
 
-        return (endTime - startTime).Minutes;
+        return Convert.ToInt32((endTime - startTime).TotalMinutes);
     }
 }
