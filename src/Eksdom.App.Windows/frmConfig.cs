@@ -1,13 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using System.Windows.Forms;
+﻿using System.Text.RegularExpressions;
 using Eksdom.EskomSePush.Client;
 using Eksdom.Integration.EskomSePush;
 using Eksdom.Shared;
@@ -34,13 +25,15 @@ public partial class frmConfig : Form
     private void btnTestApiKey_Click(object sender, EventArgs e)
     {
         const string caption = "API Licence Key";
-        if (!ValidateLicenceKey(txtLicenceKey.Text))
+        if (!ValidateLicenceKey(txtLicenceKey.Text, out var key))
         {
-            MessageBox.Show("Invalid licence key", caption, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show("Invalid licence key. Ensure you have entered all 35 characters correctly.", 
+                caption, 
+                MessageBoxButtons.OK, 
+                MessageBoxIcon.Error);
             return;
         }
 
-        var key = txtLicenceKey.Text.Trim().ToUpperInvariant();
         if (_licenceKey is not null && _licenceKey.Equals(key.ToString(), StringComparison.InvariantCultureIgnoreCase))
         {
             this.Close();
@@ -54,7 +47,7 @@ public partial class frmConfig : Form
             var allowance = espClient.GetAllowance();
             if (allowance is null)
             {
-                MessageBox.Show("The licence key appears to work however no valid response from the server was received", 
+                MessageBox.Show("The licence key appears to work however no valid response from the server was received.", 
                     caption, 
                     MessageBoxButtons.OK, 
                     MessageBoxIcon.Warning);
@@ -67,17 +60,24 @@ public partial class frmConfig : Form
         }
         catch (EksdomException)
         {
-            MessageBox.Show("That licence key was rejected by the Eskom Se Push server",
+            MessageBox.Show("That licence key was rejected by the Eskom Se Push server.",
                     caption,
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
         }
     }
 
-    private bool ValidateLicenceKey(string input)
+    private bool ValidateLicenceKey(string inputKey, out string? key)
     {
-        string pattern = @"^[a-fA-F0-9]{8}-[a-fA-F0-9]{8}-[a-fA-F0-9]{8}-[a-fA-F0-9]{8}$";
+        var pattern = @"^[a-fA-F0-9]{8}-[a-fA-F0-9]{8}-[a-fA-F0-9]{8}-[a-fA-F0-9]{8}$";
+        var testKey = inputKey.Trim().ToUpperInvariant();
+        if (Regex.IsMatch(testKey, pattern))
+        {
+            key = testKey;
+            return true;
+        };
 
-        return Regex.IsMatch(input, pattern);
+        key = null;
+        return false;
     }
 }
