@@ -20,15 +20,6 @@ public sealed class SharedMemoryAccess : IDisposable
         where T : SerializableMemoryFile
     {
         var file = new MemoryFile<T>(name, payload);
-        //var options = new JsonSerializerOptions()
-        //{
-        //    Converters =
-        //    {
-        //        new DateOnlyJsonConverter(),
-        //        new TimePeriodJsonConverter()
-        //    }
-        //};
-        //var json = JsonSerializer.Serialize(file,options);
         var json = EksdomJsonSerializer.ToJson(file);
         var buffer = Encoding.UTF8.GetBytes(json);
 
@@ -93,15 +84,6 @@ public sealed class SharedMemoryAccess : IDisposable
         }
 
         var json = Encoding.UTF8.GetString(jsonBytes.ToArray(), 0, jsonBytes.IndexOf((byte)0));
-        //var options = new JsonSerializerOptions()
-        //{
-        //    Converters = 
-        //    { 
-        //        new DateOnlyJsonConverter(), 
-        //        new TimePeriodJsonConverter() 
-        //    }
-        //};
-        //var file = JsonSerializer.Deserialize<MemoryFile<T>>(json, options);
         var file = EksdomJsonSerializer.FromJson<MemoryFile<T>>(json);
         return file!.Payload;
     }
