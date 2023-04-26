@@ -30,51 +30,16 @@
         {
             components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(frmMain));
-            btnPing = new Button();
-            lblPing = new Label();
-            btnArea = new Button();
-            txtArea = new TextBox();
             notifyIcon = new NotifyIcon(components);
-            button1 = new Button();
+            timerMain = new System.Windows.Forms.Timer(components);
+            statusStripMain = new StatusStrip();
+            lblApiAllowance = new ToolStripStatusLabel();
+            menuStrip1 = new MenuStrip();
+            menuToolStripMenuItem = new ToolStripMenuItem();
+            aPIKeyToolStripMenuItem = new ToolStripMenuItem();
+            statusStripMain.SuspendLayout();
+            menuStrip1.SuspendLayout();
             SuspendLayout();
-            // 
-            // btnPing
-            // 
-            btnPing.Location = new Point(12, 12);
-            btnPing.Name = "btnPing";
-            btnPing.Size = new Size(98, 50);
-            btnPing.TabIndex = 0;
-            btnPing.Text = "Ping";
-            btnPing.UseVisualStyleBackColor = true;
-            btnPing.Click += btnPing_Click;
-            // 
-            // lblPing
-            // 
-            lblPing.AutoSize = true;
-            lblPing.Location = new Point(116, 12);
-            lblPing.Name = "lblPing";
-            lblPing.Size = new Size(12, 15);
-            lblPing.TabIndex = 1;
-            lblPing.Text = "-";
-            // 
-            // btnArea
-            // 
-            btnArea.Location = new Point(12, 68);
-            btnArea.Name = "btnArea";
-            btnArea.Size = new Size(98, 48);
-            btnArea.TabIndex = 2;
-            btnArea.Text = "Area";
-            btnArea.UseVisualStyleBackColor = true;
-            btnArea.Click += btnArea_Click;
-            // 
-            // txtArea
-            // 
-            txtArea.Location = new Point(12, 122);
-            txtArea.Multiline = true;
-            txtArea.Name = "txtArea";
-            txtArea.ScrollBars = ScrollBars.Both;
-            txtArea.Size = new Size(449, 174);
-            txtArea.TabIndex = 3;
             // 
             // notifyIcon
             // 
@@ -82,43 +47,79 @@
             notifyIcon.Text = "Eksdom Utility";
             notifyIcon.Visible = true;
             // 
-            // button1
+            // timerMain
             // 
-            button1.Location = new Point(376, 47);
-            button1.Name = "button1";
-            button1.Size = new Size(75, 23);
-            button1.TabIndex = 4;
-            button1.Text = "button1";
-            button1.UseVisualStyleBackColor = true;
-            button1.Click += button1_Click;
+            timerMain.Interval = 5000;
+            timerMain.Tick += timerMain_Tick;
+            // 
+            // statusStripMain
+            // 
+            statusStripMain.Items.AddRange(new ToolStripItem[] { lblApiAllowance });
+            statusStripMain.Location = new Point(0, 286);
+            statusStripMain.Name = "statusStripMain";
+            statusStripMain.Size = new Size(473, 22);
+            statusStripMain.TabIndex = 0;
+            statusStripMain.Text = "statusStrip1";
+            // 
+            // lblApiAllowance
+            // 
+            lblApiAllowance.DisplayStyle = ToolStripItemDisplayStyle.Text;
+            lblApiAllowance.Name = "lblApiAllowance";
+            lblApiAllowance.Size = new Size(12, 17);
+            lblApiAllowance.Text = "-";
+            // 
+            // menuStrip1
+            // 
+            menuStrip1.Items.AddRange(new ToolStripItem[] { menuToolStripMenuItem });
+            menuStrip1.Location = new Point(0, 0);
+            menuStrip1.Name = "menuStrip1";
+            menuStrip1.Size = new Size(473, 24);
+            menuStrip1.TabIndex = 1;
+            menuStrip1.Text = "menuStrip1";
+            // 
+            // menuToolStripMenuItem
+            // 
+            menuToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { aPIKeyToolStripMenuItem });
+            menuToolStripMenuItem.Name = "menuToolStripMenuItem";
+            menuToolStripMenuItem.Size = new Size(50, 20);
+            menuToolStripMenuItem.Text = "Menu";
+            // 
+            // aPIKeyToolStripMenuItem
+            // 
+            aPIKeyToolStripMenuItem.Name = "aPIKeyToolStripMenuItem";
+            aPIKeyToolStripMenuItem.Size = new Size(180, 22);
+            aPIKeyToolStripMenuItem.Text = "API Key ,,,";
+            aPIKeyToolStripMenuItem.Click += aPIKeyToolStripMenuItem_Click;
             // 
             // frmMain
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(473, 308);
-            Controls.Add(button1);
-            Controls.Add(txtArea);
-            Controls.Add(btnArea);
-            Controls.Add(lblPing);
-            Controls.Add(btnPing);
+            Controls.Add(statusStripMain);
+            Controls.Add(menuStrip1);
             Icon = (Icon)resources.GetObject("$this.Icon");
+            MainMenuStrip = menuStrip1;
             MaximizeBox = false;
             Name = "frmMain";
             StartPosition = FormStartPosition.CenterScreen;
-            Text = "Eksdom - Anti-Loadshedding Tool";
+            Text = "Eksdom";
             Load += frmMain_Load;
+            statusStripMain.ResumeLayout(false);
+            statusStripMain.PerformLayout();
+            menuStrip1.ResumeLayout(false);
+            menuStrip1.PerformLayout();
             ResumeLayout(false);
             PerformLayout();
         }
 
         #endregion
-
-        private Button btnPing;
-        private Label lblPing;
-        private Button btnArea;
-        private TextBox txtArea;
         private NotifyIcon notifyIcon;
-        private Button button1;
+        private System.Windows.Forms.Timer timerMain;
+        private StatusStrip statusStripMain;
+        private ToolStripStatusLabel lblApiAllowance;
+        private MenuStrip menuStrip1;
+        private ToolStripMenuItem menuToolStripMenuItem;
+        private ToolStripMenuItem aPIKeyToolStripMenuItem;
     }
 }

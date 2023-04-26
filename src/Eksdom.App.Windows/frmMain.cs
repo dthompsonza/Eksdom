@@ -1,43 +1,22 @@
-using System.Text.Json;
 using Eksdom.Shared;
-using Eksdom.Shared.Serialization;
 
 namespace Eksdom.App.Windows;
 
 public partial class frmMain : Form
 {
-    //private readonly IntercomSender _intercomClient;
-    private AreaInformation _areaInformation;
+    private AreaInformation? _areaInformation;
+    private Allowance? _allowance;
 
     public frmMain()
     {
         InitializeComponent();
-        //_intercomClient = new IntercomSender(Global.IntercomNames.Service);
     }
 
     private void frmMain_Load(object sender, EventArgs e)
     {
         notifyIcon.Visible = true;
+        timerMain.Start();
     }
-
-    private void btnPing_Click(object sender, EventArgs e)
-    {
-        var allowance = SharedData.GetAllowance();
-        lblPing.Text = allowance is null ? "Unavailable" : allowance.ToString();
-    }
-
-    private void btnArea_Click(object sender, EventArgs e)
-    {
-        var area = SharedData.GetAreaInformation();
-
-        txtArea.Text = area is null ? "None" : EksdomJsonSerializer.ToJson(area, indented: true);
-        if (area is not null)
-        {
-            _areaInformation = area;
-            lblPing.Text = area.Schedule.Days.First().Stages.FirstOrDefault()!.Events.FirstOrDefault()!.Minutes.ToString();
-        }
-    }
-
     private void button1_Click(object sender, EventArgs e)
     {
         if (_areaInformation is null)
@@ -47,5 +26,48 @@ public partial class frmMain : Form
         notifyIcon.BalloonTipTitle = $"New schedule for {_areaInformation.Info.Name}";
         notifyIcon.BalloonTipText = "Your next loadshedding event will be today at 14h30";
         notifyIcon.ShowBalloonTip(3000);
+    }
+
+    private void timerMain_Tick(object sender, EventArgs e)
+    {
+        timerMain.Stop();
+        var area = SharedData.GetAreaInformation();
+        _areaInformation ??= area;
+        _allowance = SharedData.GetAllowance() ?? _allowance;
+        UpdateLabels();
+        timerMain.Start();
+
+        if (area is not null)
+        {
+            if (_areaInformation is not null && area != _areaInformation)
+            {
+                ShowBalloon("Schedule Updated", $"Next loadshedding for '{area.Info.Name}' is at 14h00");
+            }
+        }
+    }
+
+    private void UpdateLabels()
+    {
+        if (_allowance is not null)
+        {
+            statusStripMain.Items[0].Text = _allowance.ToString();
+        }
+        if (_areaInformation is not null)
+        {
+            this.Text = $"Eksdom - {_areaInformation.Info.Name} ({_areaInformation.Info.Region})";
+        }
+    }
+
+    private void ShowBalloon(string title, string text, int timer = 3000)
+    {
+        notifyIcon.BalloonTipTitle = title;
+        notifyIcon.BalloonTipText = text;
+        notifyIcon.ShowBalloonTip(timer);
+    }
+
+    private void aPIKeyToolStripMenuItem_Click(object sender, EventArgs e)
+    {
+        var frmConfig = new frmConfig();
+        frmConfig.ShowDialog(this);
     }
 }

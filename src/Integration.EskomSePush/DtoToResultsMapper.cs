@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using Eksdom.Integration.EskomSePush;
 using Eksdom.Shared;
 using Integration.EskomSePush.Models.Responses;
 

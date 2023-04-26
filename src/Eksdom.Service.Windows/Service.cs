@@ -34,23 +34,6 @@ internal class Service : BackgroundService
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            //// Make the RESTful API call here
-            //using (var httpClient = _httpClientFactory.CreateClient())
-            //{
-            //    httpClient.BaseAddress = new Uri("https://developer.sepush.co.za/");
-            //    var response = await httpClient.GetAsync("business/2.0/status");
-
-            //    if (!response.IsSuccessStatusCode)
-            //    {
-            //        // Retry the API call once
-            //        response = await httpClient.GetAsync("business/2.0/status");
-
-            //        if (!response.IsSuccessStatusCode)
-            //        {
-            //            // Log the error or take other actions
-            //        }
-            //    }
-            //}
 
             // Wait for 8 hours before making the next API call
             await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);

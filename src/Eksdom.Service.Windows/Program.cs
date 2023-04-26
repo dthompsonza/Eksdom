@@ -16,7 +16,7 @@ class Program
 {
     static async Task Main(string[] args)
     {
-        //var licenceKey = Environment.GetEnvironmentVariable("EKSDOM_ESP_API_KEY", EnvironmentVariableTarget.Machine);
+        //var licenceKey = Environment.GetEnvironmentVariable(Constants.EnvironmentVarApiKey, EnvironmentVariableTarget.Machine);
         //Ensure.That(licenceKey).IsNotNullOrEmpty();
         //var cache = new FileResponseCache();
         //var options = new ApiClientOptions(licenceKey!)

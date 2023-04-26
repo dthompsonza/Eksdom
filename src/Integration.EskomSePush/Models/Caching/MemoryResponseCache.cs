@@ -7,7 +7,7 @@ public class MemoryResponseCache : IResponseCache
     private readonly MemoryCache _memoryCache;
     private readonly TimeSpan _cacheDuration;
 
-        public MemoryResponseCache(TimeSpan? cacheDuration)
+    public MemoryResponseCache(TimeSpan? cacheDuration)
     {
         _memoryCache = new MemoryCache(new MemoryCacheOptions());
         _cacheDuration = cacheDuration ?? TimeSpan.FromHours(Constants.DefaultCacheHours);

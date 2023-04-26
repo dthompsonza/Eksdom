@@ -2,6 +2,7 @@
 using System.Net;
 using System.Text.Json;
 using Eksdom.EskomSePush.Client;
+using Eksdom.Integration.EskomSePush;
 using EnsureThat;
 using Integration.EskomSePush.Models.Responses;
 using Integration.EskomSePush.Models.Responses.Caching;
@@ -16,7 +17,7 @@ public sealed partial class EspClient : IDisposable
 
     private readonly HttpClient _httpClient;
     private readonly ApiTestModes _testMode;
-    private readonly TimeSpan? _cacheDuration;
+    private readonly TimeSpan _cacheDuration;
     private readonly IResponseCache? _responseCache;
     private readonly string _licenceKey;
 
@@ -34,19 +35,30 @@ public sealed partial class EspClient : IDisposable
         _httpClient.DefaultRequestHeaders.Add(Constants.Headers.Token, _licenceKey);
         _httpClient.DefaultRequestHeaders.Add(Constants.Headers.Client, Constants.ClientDescription);
 
-        if (clientOptions.ResponseCache is not null)
-        {
-            _responseCache = clientOptions.ResponseCache;
-            _cacheDuration = clientOptions.CacheDuration;
-        }
+        _cacheDuration = clientOptions.CacheDuration;
+         _responseCache ??= clientOptions.ResponseCache ?? new MemoryResponseCache(_cacheDuration);
     }
 
+    /// <summary>
+    /// Sync HTTP GET
+    /// </summary>
     private ResponseModel? GetResponse<TResponse>(string path, string? id = null, bool cache = true)
         where TResponse : ResponseModel
     {
         var task = InternalGetAsync<TResponse>(BuildPath(path, id!), cache);
 
-        task.Wait();
+        try
+        {
+            task.Wait();
+        }
+        catch (AggregateException aex)
+        {
+            if (aex.InnerExceptions.Count == 1)
+            {
+                throw aex.InnerExceptions[0];
+            }
+            throw;
+        }
 
         if (task.IsCompleted &&
             task.Result.success &&
@@ -58,10 +70,13 @@ public sealed partial class EspClient : IDisposable
         return null;
     }
 
+    /// <summary>
+    /// Async HTTP GET
+    /// </summary>
     private async Task<ResponseModel?> GetResponseAsync<TResponse>(string path, string? id = null, bool cache = true)
         where TResponse : ResponseModel
     {
-        var response = await InternalGetAsync<TResponse>(BuildPath(path, id!), cache);
+        var response = await InternalGetAsync<TResponse>(BuildPath(path, id!), cache).ConfigureAwait(false); 
 
         if (response.success)
         {
@@ -71,10 +86,18 @@ public sealed partial class EspClient : IDisposable
         return null;
     }
 
+    /// <summary>
+    /// Internal async GET method that handles caching and invalid Licence Keys
+    /// </summary>
+    /// <typeparam name="TResponse"></typeparam>
+    /// <param name="requestUri"></param>
+    /// <param name="cache"></param>
+    /// <returns></returns>
+    /// <exception cref="EksdomException"></exception>
     private async Task<(bool success, TResponse? model)> InternalGetAsync<TResponse>(string requestUri, bool cache)
         where TResponse : ResponseModel
     {
-        if (cache && _responseCache is not null)
+        if (_responseCache is not null)
         {
             if (_responseCache.TryGet<TResponse>(BuildCacheName(requestUri), out var cachedModel))
             {
@@ -85,20 +108,28 @@ public sealed partial class EspClient : IDisposable
             }
         }
 
-        var response = await _httpClient.GetAsync(requestUri);
+        HttpResponseMessage? response;
+        try
+        {
+            response = await _httpClient.GetAsync(requestUri).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            throw new EksdomException($"Internal http client threw an exception - {ex.Message}", ex);
+        }
 
         if (!response.IsSuccessStatusCode)
         {
             switch (response.StatusCode)
             {
                 case HttpStatusCode.Forbidden:
-                    throw new EksdomException($"Invalid licence key");
+                    throw new EksdomException($"Invalid licence key", ExceptionTypes.InvalidApiKey);
                 default:
                     return (false, default);
             }
         }
 
-        var responseString = await response.Content.ReadAsStringAsync();
+        var responseString = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
         var options = new JsonSerializerOptions(JsonSerializerDefaults.Web)
         {
@@ -110,7 +141,8 @@ public sealed partial class EspClient : IDisposable
 
         if (_responseCache is not null && model is not null)
         {
-            _responseCache.Add(BuildCacheName(requestUri), model, _cacheDuration ?? default);
+            var cacheDuration = cache ? _cacheDuration : TimeSpan.FromMinutes(5);
+            _responseCache.Add(BuildCacheName(requestUri), model, cacheDuration);
         }
 
         return (true, model);

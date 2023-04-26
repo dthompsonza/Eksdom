@@ -24,7 +24,6 @@ namespace Eksdom.Shared
                 Converters =
                 {
                     new DateOnlyJsonConverter(),
-                    new TimePeriodJsonConverter()
                 },
                 WriteIndented = indented,
             };

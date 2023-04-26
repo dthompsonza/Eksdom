@@ -16,13 +16,9 @@ public sealed partial class EspClient : IDisposable
     #region Static initializers
 
     /// <summary>
-    /// Returns a singleton instance of the api client
+    /// Returns a singleton instance of the Eskom Se Push client
     /// </summary>
-    /// <param name="espLicenceKey">Obtain licence key from EskomSePush <see href="https://eskomsepush.gumroad.com/l/api"/></param>.
-    /// <param name="httpClient">Supplied <see cref="HttpClient"/></param>.
-    /// <param name="testMode">Developer testing option</param>.
-    /// <param name="cacheDuration">Override default http response caching of 2 hours</param>.
-    /// <param name="responseCache">Override response caching. Caching is used in conjunction with <see cref="cacheDuration"/></param> to avoid making too many API calls.
+    /// <param name="options">Options to configure client</param>
     /// <returns></returns>
     public static EspClient Create(EspClientOptions options)
     {
@@ -32,6 +28,16 @@ public sealed partial class EspClient : IDisposable
         }
 
         return _instance;
+    }
+
+    /// <summary>
+    /// Creates and returns a new instance of the Eskom Se Push client
+    /// </summary>
+    /// <param name="options">Options to configure client</param>
+    /// <returns></returns>
+    public static EspClient CreateNonStatic(EspClientOptions options)
+    {
+        return new EspClient(options); 
     }
 
     #endregion
