@@ -1,7 +1,6 @@
-﻿using Integration.EskomSePush;
-using Integration.EskomSePush.Models.Responses.Caching;
+﻿using Eksdom.Client.Models.Caching;
 
-namespace Eksdom.EskomSePush.Client;
+namespace Eksdom.Client;
 
 public class EspClientOptions
 {
@@ -33,10 +32,10 @@ public class EspClientOptions
     public EspClientOptions(string licenceKey, TimeSpan? cacheDuration = null)
     {
         LicenceKey = licenceKey;
-        CacheDuration = cacheDuration ?? TimeSpan.FromHours(2);
-        if (CacheDuration.TotalMinutes < 5)
+        CacheDuration = cacheDuration ?? TimeSpan.FromHours(Constants.DefaultCacheHours);
+        if (CacheDuration.TotalMinutes < Constants.DefaultShortCacheMinutes)
         {
-            CacheDuration = TimeSpan.FromMinutes(5);
+            CacheDuration = TimeSpan.FromMinutes(Constants.DefaultShortCacheMinutes);
         }
     }
 }

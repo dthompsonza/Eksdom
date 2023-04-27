@@ -1,4 +1,5 @@
-﻿using Eksdom.SharedMemory;
+﻿using Eksdom.Shared.Models;
+using Eksdom.SharedMemory;
 
 namespace Eksdom.Shared;
 
@@ -10,6 +11,17 @@ public static class SharedData
     static SharedData()
     {
         _sharedMemoryAccess = new SharedMemoryAccess(MemoryName);
+    }
+
+    public static void SetServiceInfo(ServiceInfo serviceInfo)
+    {
+        _sharedMemoryAccess.Write(nameof(ServiceInfo), serviceInfo);
+    }
+
+    public static ServiceInfo? GetServiceInfo()
+    {
+        var result = _sharedMemoryAccess.Read<ServiceInfo>(nameof(ServiceInfo));
+        return result;
     }
 
     public static void SetAllowance(Allowance allowance)

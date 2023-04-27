@@ -34,9 +34,12 @@
             timerMain = new System.Windows.Forms.Timer(components);
             statusStripMain = new StatusStrip();
             lblApiAllowance = new ToolStripStatusLabel();
+            lblServiceInfo = new ToolStripStatusLabel();
             menuStrip1 = new MenuStrip();
             menuToolStripMenuItem = new ToolStripMenuItem();
             aPIKeyToolStripMenuItem = new ToolStripMenuItem();
+            label1 = new Label();
+            lblNextLoadshedding = new Label();
             statusStripMain.SuspendLayout();
             menuStrip1.SuspendLayout();
             SuspendLayout();
@@ -54,7 +57,7 @@
             // 
             // statusStripMain
             // 
-            statusStripMain.Items.AddRange(new ToolStripItem[] { lblApiAllowance });
+            statusStripMain.Items.AddRange(new ToolStripItem[] { lblApiAllowance, lblServiceInfo });
             statusStripMain.Location = new Point(0, 286);
             statusStripMain.Name = "statusStripMain";
             statusStripMain.Size = new Size(473, 22);
@@ -65,8 +68,16 @@
             // 
             lblApiAllowance.DisplayStyle = ToolStripItemDisplayStyle.Text;
             lblApiAllowance.Name = "lblApiAllowance";
-            lblApiAllowance.Size = new Size(12, 17);
+            lblApiAllowance.Size = new Size(229, 17);
+            lblApiAllowance.Spring = true;
             lblApiAllowance.Text = "-";
+            // 
+            // lblServiceInfo
+            // 
+            lblServiceInfo.Name = "lblServiceInfo";
+            lblServiceInfo.Size = new Size(229, 17);
+            lblServiceInfo.Spring = true;
+            lblServiceInfo.Text = "...";
             // 
             // menuStrip1
             // 
@@ -87,15 +98,36 @@
             // aPIKeyToolStripMenuItem
             // 
             aPIKeyToolStripMenuItem.Name = "aPIKeyToolStripMenuItem";
-            aPIKeyToolStripMenuItem.Size = new Size(180, 22);
-            aPIKeyToolStripMenuItem.Text = "API Key ,,,";
+            aPIKeyToolStripMenuItem.Size = new Size(122, 22);
+            aPIKeyToolStripMenuItem.Text = "Config ...";
             aPIKeyToolStripMenuItem.Click += aPIKeyToolStripMenuItem_Click;
+            // 
+            // label1
+            // 
+            label1.AutoSize = true;
+            label1.Location = new Point(29, 57);
+            label1.Name = "label1";
+            label1.Size = new Size(107, 15);
+            label1.TabIndex = 2;
+            label1.Text = "Next loadshedding";
+            // 
+            // lblNextLoadshedding
+            // 
+            lblNextLoadshedding.BorderStyle = BorderStyle.FixedSingle;
+            lblNextLoadshedding.Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point);
+            lblNextLoadshedding.Location = new Point(54, 90);
+            lblNextLoadshedding.Name = "lblNextLoadshedding";
+            lblNextLoadshedding.Size = new Size(359, 102);
+            lblNextLoadshedding.TabIndex = 3;
+            lblNextLoadshedding.Text = "--";
             // 
             // frmMain
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(473, 308);
+            Controls.Add(lblNextLoadshedding);
+            Controls.Add(label1);
             Controls.Add(statusStripMain);
             Controls.Add(menuStrip1);
             Icon = (Icon)resources.GetObject("$this.Icon");
@@ -121,5 +153,8 @@
         private MenuStrip menuStrip1;
         private ToolStripMenuItem menuToolStripMenuItem;
         private ToolStripMenuItem aPIKeyToolStripMenuItem;
+        private ToolStripStatusLabel lblServiceInfo;
+        private Label label1;
+        private Label lblNextLoadshedding;
     }
 }

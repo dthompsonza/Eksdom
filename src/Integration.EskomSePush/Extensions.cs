@@ -3,7 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Web;
 
-namespace Integration.EskomSePush;
+namespace Eksdom.Client;
 
 internal static class Extensions
 {

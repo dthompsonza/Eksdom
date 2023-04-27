@@ -25,6 +25,11 @@ public sealed class Event : IEquatable<Event>
     /// </summary>
     public int StageLevel { get; }
 
+    /// <summary>
+    /// Length of event
+    /// </summary>
+    public TimeSpan Length => End - Start;
+
     /// <inheritdoc/>
     public override string ToString() => $"Stage {StageLevel} {Start} - {End}";
 

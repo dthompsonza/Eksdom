@@ -1,7 +1,9 @@
-﻿namespace Integration.EskomSePush.Models.Responses.Caching;
+﻿namespace Eksdom.Client.Models.Caching;
 
 public interface IResponseCache : IDisposable
 {
+    public string? PartitionKey { get; init; }
+
     /// <summary>
     /// Add item to the cache
     /// </summary>
@@ -19,4 +21,9 @@ public interface IResponseCache : IDisposable
     /// </summary>
     public void Remove<TResponse>(string key)
         where TResponse : ResponseModel;
+
+    /// <summary>
+    /// Clears the whole cache
+    /// </summary>
+    public void Clear();
 }

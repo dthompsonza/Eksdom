@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Integration.EskomSePush.Models.Responses;
+namespace Eksdom.Client.Models;
 
 internal class AreaInformationResponse : ResponseModel
 {

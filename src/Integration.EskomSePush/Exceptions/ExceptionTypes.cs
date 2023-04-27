@@ -1,4 +1,4 @@
-﻿namespace Eksdom.Integration.EskomSePush;
+﻿namespace Eksdom.Client;
 
 public enum ExceptionTypes
 {

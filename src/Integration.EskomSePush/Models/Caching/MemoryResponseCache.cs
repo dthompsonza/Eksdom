@@ -1,16 +1,22 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
 
-namespace Integration.EskomSePush.Models.Responses.Caching;
+namespace Eksdom.Client.Models.Caching;
 
+/// <summary>
+/// In-memory caching, implemented by default in <see cref="EspClient"/>
+/// </summary>
 public class MemoryResponseCache : IResponseCache
 {
     private readonly MemoryCache _memoryCache;
     private readonly TimeSpan _cacheDuration;
 
-    public MemoryResponseCache(TimeSpan? cacheDuration)
+    public string PartitionKey { get; init; }
+
+    public MemoryResponseCache(TimeSpan? cacheDuration, string? partitionKey)
     {
         _memoryCache = new MemoryCache(new MemoryCacheOptions());
         _cacheDuration = cacheDuration ?? TimeSpan.FromHours(Constants.DefaultCacheHours);
+        PartitionKey = partitionKey ?? "NONE";
     }
 
     public TimeSpan CacheDuration => _cacheDuration;
@@ -53,6 +59,11 @@ public class MemoryResponseCache : IResponseCache
         where TResponse : ResponseModel
     {
         _memoryCache.Remove(key);
+    }
+
+    public virtual void Clear()
+    {
+        _memoryCache.Clear();
     }
 
     public void Dispose()

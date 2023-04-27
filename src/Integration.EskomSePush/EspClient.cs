@@ -1,9 +1,6 @@
-﻿using Eksdom.EskomSePush.Client;
-using Eksdom.Shared;
-using EnsureThat;
-using Integration.EskomSePush.Models.Responses;
+﻿using System.Text.RegularExpressions;
 
-namespace Integration.EskomSePush;
+namespace Eksdom.Client;
 
 /// <summary>
 /// Client for <see href="https://eskomsepush.gumroad.com/l/api">EskomSePush API</see> 2.0. 
@@ -16,7 +13,7 @@ public sealed partial class EspClient : IDisposable
     #region Static initializers
 
     /// <summary>
-    /// Returns a singleton instance of the Eskom Se Push client
+    /// Returns a singleton instance of the Eskom Se Push client.
     /// </summary>
     /// <param name="options">Options to configure client</param>
     /// <returns></returns>
@@ -26,12 +23,19 @@ public sealed partial class EspClient : IDisposable
         {
             _instance = new EspClient(options);
         }
+        else
+        {
+            if (!_instance.LicenceKeyMatches(options.LicenceKey))
+            {
+                _instance.SetLicenceKey(options.LicenceKey);
+            }
+        }
 
         return _instance;
     }
 
     /// <summary>
-    /// Creates and returns a new instance of the Eskom Se Push client
+    /// Creates and returns a new instance instead of the static Singleton instance.
     /// </summary>
     /// <param name="options">Options to configure client</param>
     /// <returns></returns>
@@ -42,89 +46,42 @@ public sealed partial class EspClient : IDisposable
 
     #endregion
 
-    #region Status
+    #region Licence key methods
 
-    /// <summary>
-    /// The current and next loadshedding statuses for South Africa and (Optional) municipal overrides.
-    /// </summary>
-    /// <returns></returns>
-    public Status? GetStatus()
+    public bool LicenceKeyMatches(string licenceKey)
     {
-        var response = GetResponse<StatusResponse>(Constants.Resources.Status);
-        if (response is null) return null;
-        var result = ((StatusResponse)response).Map();
-        return result;
+        if (!HasLicenceKey())
+        {
+            return false;
+        }
+
+        return _licenceKey!.Equals(licenceKey, StringComparison.InvariantCultureIgnoreCase);
     }
 
-    /// <summary>
-    /// The current and next loadshedding statuses for South Africa and (Optional) municipal overrides.
-    /// </summary>
-    /// <returns></returns>
-    public async Task<Status?> GetStatusAsync()
+    public bool HasLicenceKey() => _licenceKey != null;
+
+    public void SetLicenceKey(string licenceKey)
     {
-        var response = await GetResponseAsync<StatusResponse>(Constants.Resources.Status);
-        if (response is null) return null;
-        var result = ((StatusResponse)response).Map();
-        return result;
+        _instance?.CheckAndSetLicenceKeyWithHeaders(licenceKey);
     }
 
-    #endregion
-
-    #region Check allowance
-
-    /// <summary>
-    /// Check allowance allocated for token.
-    /// </summary>
-    /// <returns></returns>
-    public Allowance? GetAllowance()
+    public void ClearLicenceKey()
     {
-        var response = GetResponse<AllowanceResponse>(Constants.Resources.Allowance, cache: false);
-        if (response is null) return null;
-        var result = ((AllowanceResponse)response).Map();
-        return result;
+        _instance?.ClearLicenceKeyAndRemoveHeaders();
     }
 
-    /// <summary>
-    /// Check allowance allocated for token.
-    /// </summary>
-    /// <returns></returns>
-    public async Task<Allowance?> GetAllowanceAsync()
+    public static bool ValidateLicenceKey(string licenceKey, out string? validatedKey)
     {
-        var response = await GetResponseAsync<AllowanceResponse>(Constants.Resources.Allowance, cache: false);
-        if (response is null) return null;
-        var result = ((AllowanceResponse)response).Map();
-        return result;
-    }
+        var pattern = @"^[a-fA-F0-9]{8}-[a-fA-F0-9]{8}-[a-fA-F0-9]{8}-[a-fA-F0-9]{8}$";
+        var testKey = licenceKey.Trim().ToUpperInvariant();
+        if (Regex.IsMatch(testKey, pattern))
+        {
+            validatedKey = testKey;
+            return true;
+        };
 
-    #endregion
-
-    #region Area information
-
-    /// <summary>
-    /// This single request has everything you need to monitor upcoming loadshedding events for the chosen suburb.
-    /// </summary>
-    /// <param name="id"></param>
-    public AreaInformation? GetAreaInformation(string id)
-    {
-        Ensure.That(id).IsNotNullOrEmpty();
-
-        var response = GetResponse<AreaInformationResponse>(Constants.Resources.AreaInformation, id);
-        if (response is null) return null;
-        var result = ((AreaInformationResponse)response).Map();
-        return result;
-    }
-
-    /// <summary>
-    /// This single request has everything you need to monitor upcoming loadshedding events for the chosen suburb.
-    /// </summary>
-    public async Task<AreaInformation?> GetAreaInformationAsync(string id)
-    {
-        Ensure.That(id).IsNotNullOrEmpty();
-
-        var response = await GetResponseAsync<AreaInformationResponse>(Constants.Resources.AreaInformation, id);
-        if (response is null) return null;
-        var result = ((AreaInformationResponse)response).Map();
-        return result;
+        validatedKey = null;
+        return false;
     }
 
     #endregion

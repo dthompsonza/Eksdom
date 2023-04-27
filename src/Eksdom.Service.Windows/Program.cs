@@ -4,10 +4,9 @@ using System;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using Integration.EskomSePush;
 using EnsureThat;
 using Microsoft.Extensions.Caching.Memory;
-using Eksdom.EskomSePush.Client;
+using Eksdom.Client;
 using Eksdom.Service.Caching;
 
 namespace Eksdom.Service;

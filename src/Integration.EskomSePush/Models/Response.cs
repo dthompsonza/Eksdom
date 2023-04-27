@@ -1,4 +1,4 @@
-﻿namespace Integration.EskomSePush.Models.Responses;
+﻿namespace Eksdom.Client.Models;
 
 /// <summary>
 /// Marker class

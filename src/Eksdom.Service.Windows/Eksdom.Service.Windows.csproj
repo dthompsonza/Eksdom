@@ -15,7 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Eksdom.Shared\Eksdom.Shared.csproj" />
-    <ProjectReference Include="..\Integration.EskomSePush\Eksdom.Integration.EskomSePush.csproj" />
+    <ProjectReference Include="..\Integration.EskomSePush\Eksdom.Client.csproj" />
   </ItemGroup>
 
 </Project>

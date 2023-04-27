@@ -23,6 +23,8 @@ public sealed class AreaInformation : SerializableMemoryFile, IEquatable<AreaInf
     /// <inheritdoc/>
     public override string ToString() => $"{Info.Name} ({Info.Region})";
 
+    
+
     /// <summary>
     /// Constructor
     /// </summary>

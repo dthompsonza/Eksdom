@@ -1,13 +1,11 @@
 ﻿using System.Collections.Specialized;
 using System.Net;
 using System.Text.Json;
-using Eksdom.EskomSePush.Client;
-using Eksdom.Integration.EskomSePush;
+using Eksdom.Client.Models;
+using Eksdom.Client.Models.Caching;
 using EnsureThat;
-using Integration.EskomSePush.Models.Responses;
-using Integration.EskomSePush.Models.Responses.Caching;
 
-namespace Integration.EskomSePush;
+namespace Eksdom.Client;
 
 public sealed partial class EspClient : IDisposable
 {
@@ -18,34 +16,52 @@ public sealed partial class EspClient : IDisposable
     private readonly HttpClient _httpClient;
     private readonly ApiTestModes _testMode;
     private readonly TimeSpan _cacheDuration;
-    private readonly IResponseCache? _responseCache;
-    private readonly string _licenceKey;
-
-    private EspClient(EspClientOptions clientOptions)
+    private readonly Dictionary<bool, IResponseCache?> _responseCaches = new Dictionary<bool, IResponseCache?>
     {
-        Ensure.That(clientOptions.LicenceKey).IsNotNullOrEmpty();
-        _licenceKey = clientOptions.LicenceKey;
+        { ShortTermCacheKey, null },
+        { LongTermCacheKey, null } 
+    };
+    private string? _licenceKey;
 
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+    private EspClient(EspClientOptions clientOptions)
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+    {
         _testMode = clientOptions.TestMode;
         _httpClient = clientOptions.httpClient ?? new HttpClient
         {
             BaseAddress = new Uri(Constants.Api20Uri),
         };
-
         _httpClient.DefaultRequestHeaders.Add(Constants.Headers.Token, _licenceKey);
-        _httpClient.DefaultRequestHeaders.Add(Constants.Headers.Client, Constants.ClientDescription);
+
+        CheckAndSetLicenceKeyWithHeaders(clientOptions.LicenceKey);
 
         _cacheDuration = clientOptions.CacheDuration;
-         _responseCache ??= clientOptions.ResponseCache ?? new MemoryResponseCache(_cacheDuration);
+        _responseCaches[ShortTermCacheKey] = new MemoryResponseCache(_cacheDuration, "TEMP");
+        _responseCaches[LongTermCacheKey] ??= clientOptions.ResponseCache ?? new MemoryResponseCache(_cacheDuration, "LONG");
+    }
+
+    private void CheckAndSetLicenceKeyWithHeaders(string licenceKey)
+    {
+        Ensure.That(licenceKey).IsNotNullOrEmpty();
+        _licenceKey = licenceKey;
+        _httpClient.DefaultRequestHeaders.Remove(Constants.Headers.Token);
+        _httpClient.DefaultRequestHeaders.Add(Constants.Headers.Token, licenceKey);
+    }
+
+    private void ClearLicenceKeyAndRemoveHeaders()
+    {
+        _licenceKey = null;
+        _httpClient.DefaultRequestHeaders.Remove(Constants.Headers.Token);
     }
 
     /// <summary>
     /// Sync HTTP GET
     /// </summary>
-    private ResponseModel? GetResponse<TResponse>(string path, string? id = null, bool cache = true)
+    private ResponseModel? GetResponse<TResponse>(string path, string? id = null, bool cache = true, int apiCost = 1)
         where TResponse : ResponseModel
     {
-        var task = InternalGetAsync<TResponse>(BuildPath(path, id!), cache);
+        var task = InternalGetAsync<TResponse>(BuildPath(path, id!), cache, apiCost);
 
         try
         {
@@ -73,10 +89,10 @@ public sealed partial class EspClient : IDisposable
     /// <summary>
     /// Async HTTP GET
     /// </summary>
-    private async Task<ResponseModel?> GetResponseAsync<TResponse>(string path, string? id = null, bool cache = true)
+    private async Task<ResponseModel?> GetResponseAsync<TResponse>(string path, string? id = null, bool cache = true, int apiCost = 1)
         where TResponse : ResponseModel
     {
-        var response = await InternalGetAsync<TResponse>(BuildPath(path, id!), cache).ConfigureAwait(false); 
+        var response = await InternalGetAsync<TResponse>(BuildPath(path, id!), cache, apiCost).ConfigureAwait(false); 
 
         if (response.success)
         {
@@ -94,12 +110,20 @@ public sealed partial class EspClient : IDisposable
     /// <param name="cache"></param>
     /// <returns></returns>
     /// <exception cref="EksdomException"></exception>
-    private async Task<(bool success, TResponse? model)> InternalGetAsync<TResponse>(string requestUri, bool cache)
+    /// 
+
+
+    private async Task<(bool success, TResponse? model)> InternalGetAsync<TResponse>(string requestUri, bool cache, int apiCost)
         where TResponse : ResponseModel
     {
-        if (_responseCache is not null)
+        if (!HasLicenceKey())
         {
-            if (_responseCache.TryGet<TResponse>(BuildCacheName(requestUri), out var cachedModel))
+            throw new EksdomException($"No licence key", ExceptionTypes.InvalidApiKey);
+        }
+
+        if (_responseCaches[cache] is not null)
+        {
+            if (_responseCaches[cache]!.TryGet<TResponse>(BuildCacheName(requestUri), out var cachedModel))
             {
                 if (cachedModel is not null)
                 {
@@ -109,9 +133,14 @@ public sealed partial class EspClient : IDisposable
         }
 
         HttpResponseMessage? response;
+         
         try
         {
             response = await _httpClient.GetAsync(requestUri).ConfigureAwait(false);
+            if (cache == LongTermCacheKey && apiCost > 0)
+            {
+                _responseCaches[ShortTermCacheKey]!.Clear();
+            }
         }
         catch (Exception ex)
         {
@@ -123,7 +152,7 @@ public sealed partial class EspClient : IDisposable
             switch (response.StatusCode)
             {
                 case HttpStatusCode.Forbidden:
-                    throw new EksdomException($"Invalid licence key", ExceptionTypes.InvalidApiKey);
+                    throw new EksdomException($"Server rejects licence key", ExceptionTypes.InvalidApiKey);
                 default:
                     return (false, default);
             }
@@ -133,16 +162,23 @@ public sealed partial class EspClient : IDisposable
 
         var options = new JsonSerializerOptions(JsonSerializerDefaults.Web)
         {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            IgnoreReadOnlyProperties = true,
-        };
+            //PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            //IgnoreReadOnlyProperties = true,
+            //PropertyNameCaseInsensitive = false,
+            //NumberHandling = JsonNumberHandling.AllowReadingFromString,
+            //Converters =
+            //{
+            //    new StatusResponseRequiredPropertyConverter()
+            //}
+            
+    };
 
         var model = JsonSerializer.Deserialize<TResponse>(responseString, options);
 
-        if (_responseCache is not null && model is not null)
+        if (_responseCaches[cache] is not null && model is not null)
         {
-            var cacheDuration = cache ? _cacheDuration : TimeSpan.FromMinutes(5);
-            _responseCache.Add(BuildCacheName(requestUri), model, cacheDuration);
+            var cacheDuration = cache ? _cacheDuration : TimeSpan.FromMinutes(Constants.DefaultShortCacheMinutes);
+            _responseCaches[cache]!.Add(BuildCacheName(requestUri), model, cacheDuration);
         }
 
         return (true, model);
@@ -172,11 +208,15 @@ public sealed partial class EspClient : IDisposable
 
     private string BuildCacheName(string requestUri) => requestUri.Hash(_licenceKey);
 
-    private bool CacheEnabled() => _responseCache is not null;
+    
+    private const bool ShortTermCacheKey = false;
+    private const bool LongTermCacheKey = true;
+    
 
     public void Dispose()
     {
         _httpClient?.Dispose();
-        _responseCache?.Dispose();
+        _responseCaches[false]?.Dispose();
+        _responseCaches[true]?.Dispose();
     }
 }

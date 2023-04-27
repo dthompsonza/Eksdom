@@ -5,7 +5,7 @@ VisualStudioVersion = 17.5.33516.290
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Eksdom.Service.Windows", "Eksdom.Service.Windows\Eksdom.Service.Windows.csproj", "{85C41954-D728-4AE3-960F-81374E5F3279}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Eksdom.Integration.EskomSePush", "Integration.EskomSePush\Eksdom.Integration.EskomSePush.csproj", "{D95F6458-2877-4E02-B668-90DD455A2521}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Eksdom.Client", "Integration.EskomSePush\Eksdom.Client.csproj", "{D95F6458-2877-4E02-B668-90DD455A2521}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Eksdom.App.Windows", "Eksdom.App.Windows\Eksdom.App.Windows.csproj", "{CDCEF876-2402-4F99-8223-2DAC6E6B263A}"
 EndProject

@@ -1,11 +1,15 @@
+using Eksdom.Client;
 using Eksdom.Shared;
+using Eksdom.Shared.Models;
 
 namespace Eksdom.App.Windows;
 
 public partial class frmMain : Form
 {
+    private ServiceInfo? _serviceInfo;
     private AreaInformation? _areaInformation;
     private Allowance? _allowance;
+    private Status? _status;
 
     public frmMain()
     {
@@ -31,30 +35,41 @@ public partial class frmMain : Form
     private void timerMain_Tick(object sender, EventArgs e)
     {
         timerMain.Stop();
-        var area = SharedData.GetAreaInformation();
-        _areaInformation ??= area;
+        _serviceInfo = SharedData.GetServiceInfo();
+        _areaInformation = SharedData.GetAreaInformation();
         _allowance = SharedData.GetAllowance() ?? _allowance;
+        _status = SharedData.GetStatus() ?? _status;
         UpdateLabels();
         timerMain.Start();
-
-        if (area is not null)
-        {
-            if (_areaInformation is not null && area != _areaInformation)
-            {
-                ShowBalloon("Schedule Updated", $"Next loadshedding for '{area.Info.Name}' is at 14h00");
-            }
-        }
     }
+
+
 
     private void UpdateLabels()
     {
+        if (_serviceInfo is null)
+        {
+            lblServiceInfo.Text = "Service unavailable";
+        }
+        else
+        {
+            lblServiceInfo.Text = $"Running: {(_serviceInfo.IsRunning ? "Yes" : _serviceInfo.NotRunningReason)}";
+        }
         if (_allowance is not null)
         {
-            statusStripMain.Items[0].Text = _allowance.ToString();
+            statusStripMain.Items[0].Text = $"API calls left: {_allowance.Balance}";
         }
         if (_areaInformation is not null)
         {
             this.Text = $"Eksdom - {_areaInformation.Info.Name} ({_areaInformation.Info.Region})";
+        }
+        if (_areaInformation is not null && _status is not null)
+        {
+            var @event = Planner.NextOrCurrentLoadshedding(_areaInformation, _status, AreaOverrides.CapeTown);
+            if (@event is not null)
+            {
+                lblNextLoadshedding.Text = $"{@event.Value.Starts:dd-MMM} at {@event.Value.Starts:HH:mm} for {@event.Value.Length.TotalHours} hours";
+            }
         }
     }
 

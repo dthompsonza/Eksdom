@@ -1,11 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.Runtime.CompilerServices;
-using Eksdom.Integration.EskomSePush;
+using Eksdom.Client.Models;
 using Eksdom.Shared;
-using Integration.EskomSePush.Models.Responses;
 
-namespace Integration.EskomSePush;
+namespace Eksdom.Client;
 
 internal static class DtoToResultsMapper
 {
@@ -28,8 +27,8 @@ internal static class DtoToResultsMapper
         ValidateModel(statusResponse);
 
         return new Status(
-            eskom: Map(statusResponse.Eskom),
-            capeTown: Map(statusResponse.CapeTown));
+            eskom: Map(statusResponse.Status.Eskom),
+            capeTown: Map(statusResponse.Status.CapeTown));
     }
 
     private static StatusDetail Map(this StatusDetailDto statusDetailDto)

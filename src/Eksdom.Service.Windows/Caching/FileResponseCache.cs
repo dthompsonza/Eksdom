@@ -1,5 +1,5 @@
 ﻿using System.Text.Json;
-using Integration.EskomSePush.Models.Responses.Caching;
+using Eksdom.Client.Models.Caching;
 
 namespace Eksdom.Service.Caching;
 
@@ -11,8 +11,8 @@ internal class FileResponseCache : MemoryResponseCache
 {
     private readonly object _lockObject = new object();
 
-    public FileResponseCache()
-        : base(cacheDuration: null) // Let the MemoryResponseCache deal with the cache timeout (2 hrs)
+    public FileResponseCache(string? partitionKey)
+        : base(cacheDuration: null, partitionKey: partitionKey) // Let the MemoryResponseCache deal with the cache timeout (2 hrs)
     {
     }
 
@@ -36,6 +36,28 @@ internal class FileResponseCache : MemoryResponseCache
         return item;
     }
 
+    public override void Clear()
+    {
+        var directoryInfo = new DirectoryInfo(Path.GetTempPath());
+        var jsonFiles = directoryInfo.GetFiles($"{PartitionKey}*.json", SearchOption.TopDirectoryOnly);
+
+        lock(_lockObject)
+        {
+            try
+            {
+                foreach (FileInfo file in jsonFiles)
+                {
+                    file.Delete();
+                }
+            }
+            catch
+            {
+                // oh well
+            }
+        }
+        base.Clear();
+    }
+
     private void CacheToFile<TResponse>(string key, TResponse? item)
     {
         if (item is null)
@@ -44,7 +66,7 @@ internal class FileResponseCache : MemoryResponseCache
         }
 
         var json = JsonSerializer.Serialize(item);
-        var filename = BuildFilename<TResponse>(key);
+        var filename = BuildFilename<TResponse>(key, PartitionKey);
 
         lock (_lockObject)
         {
@@ -61,7 +83,7 @@ internal class FileResponseCache : MemoryResponseCache
 
     private TResponse? ReadCacheFile<TResponse>(string key, out TimeSpan cacheAge)
     {
-        var filename = BuildFilename<TResponse>(key);
+        var filename = BuildFilename<TResponse>(key, PartitionKey);
         
         if (!File.Exists(filename))
         {
@@ -92,9 +114,9 @@ internal class FileResponseCache : MemoryResponseCache
         return item is null ? default : item;
     }
 
-    private static string BuildFilename<TResponse>(string key)
+    private static string BuildFilename<TResponse>(string key, string partitionKey)
     {
-        var filename = Path.Combine(Path.GetTempPath(), $"{AppDomain.CurrentDomain.FriendlyName}-{typeof(TResponse).Name}-{key}.json");
+        var filename = Path.Combine(Path.GetTempPath(), $"{AppDomain.CurrentDomain.FriendlyName}-{partitionKey}-{typeof(TResponse).Name}-{key}.json");
         return filename;
     }
 
@@ -103,5 +125,4 @@ internal class FileResponseCache : MemoryResponseCache
         var fileInfo = new FileInfo(filename);
         return fileInfo.LastWriteTime;
     }
-
 }
