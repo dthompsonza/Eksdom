@@ -2,8 +2,8 @@
 using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Eksdom.Client.Caching;
 using Eksdom.Client.Models;
-using Eksdom.Client.Models.Caching;
 
 namespace Eksdom.Client;
 

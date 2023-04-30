@@ -1,6 +1,7 @@
-﻿using Microsoft.Extensions.Caching.Memory;
+﻿using Eksdom.Client.Models;
+using Microsoft.Extensions.Caching.Memory;
 
-namespace Eksdom.Client.Models.Caching;
+namespace Eksdom.Client.Caching;
 
 /// <summary>
 /// In-memory caching, implemented by default in <see cref="EspClient"/>
@@ -21,7 +22,7 @@ public class MemoryResponseCache : IResponseCache
 
     public TimeSpan CacheDuration => _cacheDuration;
 
-    public virtual void Add<TResponse>(string key, TResponse item, TimeSpan duration = default) 
+    public virtual void Add<TResponse>(string key, TResponse item, TimeSpan duration = default)
         where TResponse : ResponseModel
     {
         _memoryCache.Set(key, item, CalculateCacheDuration(duration));

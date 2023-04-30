@@ -57,9 +57,9 @@
             // statusStripMain
             // 
             statusStripMain.Items.AddRange(new ToolStripItem[] { lblApiAllowance, lblServiceInfo });
-            statusStripMain.Location = new Point(0, 159);
+            statusStripMain.Location = new Point(0, 221);
             statusStripMain.Name = "statusStripMain";
-            statusStripMain.Size = new Size(473, 22);
+            statusStripMain.Size = new Size(474, 22);
             statusStripMain.TabIndex = 0;
             statusStripMain.Text = "statusStrip1";
             // 
@@ -83,7 +83,7 @@
             menuStrip1.Items.AddRange(new ToolStripItem[] { menuToolStripMenuItem });
             menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
-            menuStrip1.Size = new Size(473, 24);
+            menuStrip1.Size = new Size(474, 24);
             menuStrip1.TabIndex = 1;
             menuStrip1.Text = "menuStrip1";
             // 
@@ -116,7 +116,7 @@
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(473, 181);
+            ClientSize = new Size(474, 243);
             Controls.Add(lblNextLoadshedding);
             Controls.Add(statusStripMain);
             Controls.Add(menuStrip1);

@@ -1,4 +1,4 @@
-﻿using Eksdom.Client.Models.Caching;
+﻿using Eksdom.Client.Caching;
 
 namespace Eksdom.Client;
 

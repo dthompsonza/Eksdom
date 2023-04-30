@@ -1,5 +1,5 @@
 ﻿using System.Text.Json;
-using Eksdom.Client.Models.Caching;
+using Eksdom.Client.Caching;
 
 namespace Eksdom.Service.Caching;
 
