@@ -1,5 +1,6 @@
 ﻿using Eksdom.Client.Models;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 
 namespace Eksdom.Client.Caching;
 
@@ -13,11 +14,19 @@ public class MemoryResponseCache : IResponseCache
 
     public string PartitionKey { get; init; }
 
-    public MemoryResponseCache(TimeSpan? cacheDuration, string? partitionKey = null)
+    public ILogger<MemoryResponseCache> Logger { get; init; }
+
+    public MemoryResponseCache(TimeSpan? cacheDuration, 
+        string? partitionKey = null,
+        ILogger<MemoryResponseCache>? logger = null)
     {
         _memoryCache = new MemoryCache(new MemoryCacheOptions());
         _cacheDuration = cacheDuration ?? TimeSpan.FromHours(Constants.DefaultCacheHours);
         PartitionKey = partitionKey ?? "NONE";
+        Logger = logger ?? LoggerFactory.Create(builder =>
+        {
+            builder.AddConsole();
+        }).CreateLogger<MemoryResponseCache>();
     }
 
     public TimeSpan CacheDuration => _cacheDuration;
@@ -25,7 +34,9 @@ public class MemoryResponseCache : IResponseCache
     public virtual void Add<TResponse>(string key, TResponse item, TimeSpan duration = default)
         where TResponse : ResponseModel
     {
-        _memoryCache.Set(key, item, CalculateCacheDuration(duration));
+        var cacheDuration = CalculateCacheDuration(duration);
+        Logger.LogTrace("Setting memory cache {Key} with {Item} for {CacheDuration}", key, item, cacheDuration);
+        _memoryCache.Set(key, item, cacheDuration);
     }
 
     public bool TryGet<TResponse>(string key, out TResponse? item)
@@ -50,25 +61,31 @@ public class MemoryResponseCache : IResponseCache
 
         if (objValue is null)
         {
+            Logger.LogTrace("Getting memory cache {Key} found no item in cache", key);
             return null;
         }
 
-        return (TResponse)objValue;
+        var item = (TResponse)objValue;
+        Logger.LogTrace("Getting memory cache {Key} found {Item} in cache", key, item);
+        return item;
     }
 
     public virtual void Remove<TResponse>(string key)
         where TResponse : ResponseModel
     {
+        Logger.LogTrace("Removing memory cache {Key} item", key);
         _memoryCache.Remove(key);
     }
 
     public virtual void Clear()
     {
+        Logger.LogTrace("Clearing memory cache");
         _memoryCache.Clear();
     }
 
     public void Dispose()
     {
+        Logger.LogTrace("Memory cache disposed");
         _memoryCache.Dispose();
     }
 

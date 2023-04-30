@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using Eksdom.Client.Caching;
+using Microsoft.Extensions.Logging;
 
 namespace Eksdom.Service.Caching;
 
@@ -7,12 +8,12 @@ namespace Eksdom.Service.Caching;
 /// Hooks into the <see cref="MemoryResponseCache"/> and allows for the cache to be refreshed from disk
 /// in between service restarts, to eliminate wasting API allowance.
 /// </summary>
-internal class FileResponseCache : MemoryResponseCache
+internal sealed class FileResponseCache : MemoryResponseCache
 {
     private readonly object _lockObject = new object();
 
-    public FileResponseCache(string? partitionKey)
-        : base(cacheDuration: null, partitionKey: partitionKey) // Let the MemoryResponseCache deal with the cache timeout (2 hrs)
+    public FileResponseCache(string? partitionKey, ILogger<FileResponseCache>? logger = null)
+        : base(cacheDuration: null, partitionKey, logger) 
     {
     }
 
@@ -33,7 +34,7 @@ internal class FileResponseCache : MemoryResponseCache
                 base.Add(key, item, base.CacheDuration - cacheAge);
             }
         }
-        return item;
+        return item!;
     }
 
     public override void Clear()
@@ -43,16 +44,20 @@ internal class FileResponseCache : MemoryResponseCache
 
         lock(_lockObject)
         {
+            var cachingFilename = string.Empty;
+
             try
             {
                 foreach (FileInfo file in jsonFiles)
                 {
+                    cachingFilename = file.FullName;
                     file.Delete();
+                    Logger.LogTrace("Deleted caching file {Filename}", cachingFilename);
                 }
             }
             catch
             {
-                // oh well
+                Logger.LogWarning("Failed to delete caching file {Filename}", cachingFilename);
             }
         }
         base.Clear();
@@ -73,10 +78,11 @@ internal class FileResponseCache : MemoryResponseCache
             try
             {
                 File.WriteAllText(filename, json);
+                Logger.LogTrace("Saved data to caching file {Filename}", filename);
             }
-            catch
+            catch (Exception ex)
             {
-                // oh well
+                Logger.LogWarning("Failed to write to caching file {Filename} - {Error}", filename, ex);
             }
         }
     }
@@ -104,10 +110,11 @@ internal class FileResponseCache : MemoryResponseCache
             {
                 var json = File.ReadAllText(filename);
                 item = JsonSerializer.Deserialize<TResponse>(json);
+                Logger.LogTrace("Read data from caching file {Filename}, found {Item}", filename, item);
             }
-            catch
+            catch (Exception ex)
             {
-                // ILogger this laterrr
+                Logger.LogWarning("Failed to read caching file {Filename} - {Exception}", filename, ex);
             }
         }
 
