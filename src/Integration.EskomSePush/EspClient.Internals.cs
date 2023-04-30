@@ -1,9 +1,9 @@
 ﻿using System.Collections.Specialized;
 using System.Net;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Eksdom.Client.Models;
 using Eksdom.Client.Models.Caching;
-using EnsureThat;
 
 namespace Eksdom.Client;
 
@@ -19,40 +19,26 @@ public sealed partial class EspClient : IDisposable
     private readonly Dictionary<bool, IResponseCache?> _responseCaches = new Dictionary<bool, IResponseCache?>
     {
         { ShortTermCacheKey, null },
-        { LongTermCacheKey, null } 
+        { LongTermCacheKey, null }
     };
     private string? _licenceKey;
 
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     private EspClient(EspClientOptions clientOptions)
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     {
         _testMode = clientOptions.TestMode;
-        _httpClient = clientOptions.httpClient ?? new HttpClient
+        _httpClient = clientOptions.httpClient ?? new HttpClient(new SocketsHttpHandler
+        {
+            PooledConnectionLifetime = TimeSpan.FromMinutes(15),
+        })
         {
             BaseAddress = new Uri(Constants.Api20Uri),
         };
-        _httpClient.DefaultRequestHeaders.Add(Constants.Headers.Token, _licenceKey);
 
         CheckAndSetLicenceKeyWithHeaders(clientOptions.LicenceKey);
 
         _cacheDuration = clientOptions.CacheDuration;
-        _responseCaches[ShortTermCacheKey] = new MemoryResponseCache(_cacheDuration, "TEMP");
-        _responseCaches[LongTermCacheKey] ??= clientOptions.ResponseCache ?? new MemoryResponseCache(_cacheDuration, "LONG");
-    }
-
-    private void CheckAndSetLicenceKeyWithHeaders(string licenceKey)
-    {
-        Ensure.That(licenceKey).IsNotNullOrEmpty();
-        _licenceKey = licenceKey;
-        _httpClient.DefaultRequestHeaders.Remove(Constants.Headers.Token);
-        _httpClient.DefaultRequestHeaders.Add(Constants.Headers.Token, licenceKey);
-    }
-
-    private void ClearLicenceKeyAndRemoveHeaders()
-    {
-        _licenceKey = null;
-        _httpClient.DefaultRequestHeaders.Remove(Constants.Headers.Token);
+        _responseCaches[ShortTermCacheKey] = new MemoryResponseCache(_cacheDuration);
+        _responseCaches[LongTermCacheKey] ??= clientOptions.ResponseCache ?? new MemoryResponseCache(_cacheDuration);
     }
 
     /// <summary>
@@ -92,7 +78,7 @@ public sealed partial class EspClient : IDisposable
     private async Task<ResponseModel?> GetResponseAsync<TResponse>(string path, string? id = null, bool cache = true, int apiCost = 1)
         where TResponse : ResponseModel
     {
-        var response = await InternalGetAsync<TResponse>(BuildPath(path, id!), cache, apiCost).ConfigureAwait(false); 
+        var response = await InternalGetAsync<TResponse>(BuildPath(path, id!), cache, apiCost).ConfigureAwait(false);
 
         if (response.success)
         {
@@ -111,7 +97,6 @@ public sealed partial class EspClient : IDisposable
     /// <returns></returns>
     /// <exception cref="EksdomException"></exception>
     /// 
-
 
     private async Task<(bool success, TResponse? model)> InternalGetAsync<TResponse>(string requestUri, bool cache, int apiCost)
         where TResponse : ResponseModel
@@ -133,7 +118,7 @@ public sealed partial class EspClient : IDisposable
         }
 
         HttpResponseMessage? response;
-         
+
         try
         {
             response = await _httpClient.GetAsync(requestUri).ConfigureAwait(false);
@@ -162,16 +147,11 @@ public sealed partial class EspClient : IDisposable
 
         var options = new JsonSerializerOptions(JsonSerializerDefaults.Web)
         {
-            //PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            //IgnoreReadOnlyProperties = true,
-            //PropertyNameCaseInsensitive = false,
-            //NumberHandling = JsonNumberHandling.AllowReadingFromString,
-            //Converters =
-            //{
-            //    new StatusResponseRequiredPropertyConverter()
-            //}
-            
-    };
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            IgnoreReadOnlyProperties = true,
+            PropertyNameCaseInsensitive = false,
+            NumberHandling = JsonNumberHandling.AllowReadingFromString,
+        };
 
         var model = JsonSerializer.Deserialize<TResponse>(responseString, options);
 
@@ -195,7 +175,7 @@ public sealed partial class EspClient : IDisposable
 
         if (_testMode != ApiTestModes.None)
         {
-            nmc.Add(Constants.QueryParams.Test, _testMode == ApiTestModes.Current 
+            nmc.Add(Constants.QueryParams.Test, _testMode == ApiTestModes.Current
                 ? Constants.Testing.Current : Constants.Testing.Future);
         }
         if (id is not null)
@@ -206,12 +186,19 @@ public sealed partial class EspClient : IDisposable
         return path.ToQueryString(nmc);
     }
 
-    private string BuildCacheName(string requestUri) => requestUri.Hash(_licenceKey);
+    private string BuildCacheName(string requestUri)
+    {
+        if (!HasLicenceKey())
+        {
+            throw new InvalidOperationException("Cannot build cache name if no licence key configured");
+        }
 
-    
+        return requestUri.Hash(_licenceKey!);
+    }
+
     private const bool ShortTermCacheKey = false;
     private const bool LongTermCacheKey = true;
-    
+
 
     public void Dispose()
     {

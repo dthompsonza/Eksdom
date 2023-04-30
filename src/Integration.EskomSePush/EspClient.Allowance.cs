@@ -1,5 +1,5 @@
-﻿using Eksdom.Shared;
-using Eksdom.Client.Models;
+﻿using Eksdom.Client.Models;
+using Eksdom.Shared;
 
 namespace Eksdom.Client;
 

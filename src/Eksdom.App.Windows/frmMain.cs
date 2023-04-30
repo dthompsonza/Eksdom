@@ -43,8 +43,6 @@ public partial class frmMain : Form
         timerMain.Start();
     }
 
-
-
     private void UpdateLabels()
     {
         if (_serviceInfo is null)
@@ -53,23 +51,31 @@ public partial class frmMain : Form
         }
         else
         {
-            lblServiceInfo.Text = $"Running: {(_serviceInfo.IsRunning ? "Yes" : _serviceInfo.NotRunningReason)}";
+            lblServiceInfo.Text = $"{(_serviceInfo.IsRunning ? "Service running" : _serviceInfo.NotRunningReason)}";
         }
         if (_allowance is not null)
         {
-            statusStripMain.Items[0].Text = $"API calls left: {_allowance.Balance}";
+            statusStripMain.Items[0].Text = $"Calls left: {_allowance.Balance}";
         }
         if (_areaInformation is not null)
         {
             this.Text = $"Eksdom - {_areaInformation.Info.Name} ({_areaInformation.Info.Region})";
         }
-        if (_areaInformation is not null && _status is not null)
+        if (_areaInformation is not null && _status is not null && _serviceInfo?.Override is not null)
         {
-            var @event = Planner.NextOrCurrentLoadshedding(_areaInformation, _status, AreaOverrides.CapeTown);
+            var @event = Planner.NextOrCurrentLoadshedding(_areaInformation, _serviceInfo.Override.Value);
             if (@event is not null)
             {
-                lblNextLoadshedding.Text = $"{@event.Value.Starts:dd-MMM} at {@event.Value.Starts:HH:mm} for {@event.Value.Length.TotalHours} hours";
+                lblNextLoadshedding.Text = $"Stage {@event.StageLevel} on {@event.Start:dd MMM} starts at {@event.Start:h:mm tt} for {@event.Length.TotalHours} hours";
             }
+            else
+            {
+                lblNextLoadshedding.Text = $"No loadshedding";
+            }
+        }
+        else
+        {
+            lblNextLoadshedding.Text = $"?";
         }
     }
 

@@ -12,7 +12,7 @@ public class MemoryResponseCache : IResponseCache
 
     public string PartitionKey { get; init; }
 
-    public MemoryResponseCache(TimeSpan? cacheDuration, string? partitionKey)
+    public MemoryResponseCache(TimeSpan? cacheDuration, string? partitionKey = null)
     {
         _memoryCache = new MemoryCache(new MemoryCacheOptions());
         _cacheDuration = cacheDuration ?? TimeSpan.FromHours(Constants.DefaultCacheHours);

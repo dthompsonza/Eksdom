@@ -8,11 +8,15 @@ using EnsureThat;
 using Microsoft.Extensions.Caching.Memory;
 using Eksdom.Client;
 using Eksdom.Service.Caching;
+using CliWrap;
+using System.ServiceProcess;
 
 namespace Eksdom.Service;
 
 class Program
 {
+    const string ServiceName = "Eksdom Service";
+
     static async Task Main(string[] args)
     {
         //var licenceKey = Environment.GetEnvironmentVariable(Constants.EnvironmentVarApiKey, EnvironmentVariableTarget.Machine);
@@ -42,6 +46,13 @@ class Program
         //var m = new MemoryCache(new MemoryCacheOptions());
 
         ////////////////////////////////
+        ///
+
+        if (args is { Length: 1 })
+        {
+            await SetupService(args);
+            return;
+        }
 
         await Host.CreateDefaultBuilder(args)
             .UseWindowsService()
@@ -54,5 +65,27 @@ class Program
 
         ////////////////////////////////
 
+    }
+
+    static async Task SetupService(string[] args)
+    {
+        var executablePath = Path.Combine(AppContext.BaseDirectory, "Eksdom.Service.Windows.exe");
+        if (args[0] is "/Install")
+        {
+            await Cli.Wrap("sc")
+                .WithArguments(new[] { "create", ServiceName, $"binPath={executablePath}", "start=auto" })
+                .ExecuteAsync();
+        }
+        else if (args[0] is "/Uninstall")
+        {
+            await Cli.Wrap("sc")
+                .WithArguments(new[] { "stop", ServiceName })
+                .ExecuteAsync();
+            await Cli.Wrap("sc")
+                .WithArguments(new[] { "delete", ServiceName })
+                .ExecuteAsync();
+        }
+
+        return;
     }
 }

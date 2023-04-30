@@ -7,11 +7,11 @@ namespace Eksdom.App.Windows;
 public partial class frmConfig : Form
 {
     private string? _licenceKey;
-
+    
     public frmConfig()
     {
         InitializeComponent();
-        _licenceKey = Environment.GetEnvironmentVariable(Constants.EnvironmentVarApiKey, EnvironmentVariableTarget.Machine);
+        _licenceKey = Config.LicenceKey;
         txtLicenceKey.Text = _licenceKey;
     }
 
@@ -54,7 +54,7 @@ public partial class frmConfig : Form
                 return;
             }
 
-            Environment.SetEnvironmentVariable(Constants.EnvironmentVarApiKey, key.ToString(), EnvironmentVariableTarget.Machine);
+            Environment.SetEnvironmentVariable(GlobalConstants.EnvironmentVarApiKey, key.ToString(), EnvironmentVariableTarget.Machine);
             this.Close();
             return;
         }

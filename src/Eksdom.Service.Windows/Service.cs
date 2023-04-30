@@ -18,13 +18,24 @@ internal class Service : BackgroundService
             DateTime.Today.AddDays(3).AddHours(10) // 3 days from now at 10 AM
         };
 
-    private EspClient _espClient;
+    private EspClient? _espClient;
     private string? _badLicenceKey;
 
     public Service(IHttpClientFactory httpClientFactory)
     {
         _httpClientFactory = httpClientFactory;
+    }
+
+    public override Task StartAsync(CancellationToken cancellationToken)
+    {
         _espClient = CheckLicenceKeyAndResetClient(null);
+        return base.StartAsync(cancellationToken);
+    }
+
+    public override Task StopAsync(CancellationToken cancellationToken)
+    {
+        _espClient?.Dispose();
+        return base.StopAsync(cancellationToken);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -42,25 +53,25 @@ internal class Service : BackgroundService
                 continue;
             }
             await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
-            
-            if (string.IsNullOrEmpty(LoadLicenceKey()))
+
+            if (!Config.IsValid())
             {
-                SetServiceInfo(isRunning: false, "No or invalid licence key configured");
-                _espClient.ClearLicenceKey();
+                SetServiceInfo(isRunning: false, "Licence key and Area id are not configured");
+                _espClient?.ClearLicenceKey();
                 continue;
             }
-            if (_badLicenceKey is not null && _badLicenceKey.Equals(LoadLicenceKey()))
+
+            if (_badLicenceKey is not null && _badLicenceKey.Equals(Config.LicenceKey))
             {
                 SetServiceInfo(isRunning: false, "Licence key rejected by server");
-                _espClient.ClearLicenceKey();
+                _espClient?.ClearLicenceKey();
                 continue;
             }
 
             _espClient = CheckLicenceKeyAndResetClient(_espClient);
-            
-            if (!HasEspClient())
+
+            if (_espClient is null)
             {
-                Console.WriteLine("This should never be displayed");
                 continue;
             }
 
@@ -68,30 +79,37 @@ internal class Service : BackgroundService
 
             try
             {
-                RefreshData(allowance, areaInformation,status);
+                RefreshData(allowance, areaInformation, status);
                 _badLicenceKey = null;
-                SetServiceInfo(isRunning: true);
+                SetServiceInfo(isRunning: true, 
+                    areaId: Config.AreaId, 
+                    @override: Config.Override);
             }
             catch (EksdomException eksex) when (eksex.ExceptionType == ExceptionTypes.InvalidApiKey)
             {
-                _badLicenceKey = LoadLicenceKey();
+                _badLicenceKey = Config.LicenceKey;
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.ToString());
-                _espClient.ClearLicenceKey();
             }
         }
     }
 
-    private void SetServiceInfo(bool isRunning, string? notRunningReason = null)
+    private void SetServiceInfo(bool isRunning, string? notRunningReason = null, string? areaId = null, AreaOverrides? @override = null)
     {
-        var serviceInfo = new ServiceInfo(_started, isRunning, notRunningReason);
+        var serviceInfo = new ServiceInfo(_started, isRunning, notRunningReason, areaId, @override);
         SharedData.SetServiceInfo(serviceInfo);
     }
 
+
     private void RefreshData(Allowance? oldAllowance, AreaInformation? oldArea, Status? oldStatus)
     {
+        if (!Config.IsValid())
+        {
+            return;
+        }
+
         var status = _espClient!.GetStatus();
         if (status is not null &&
             (oldStatus is null || status != oldStatus))
@@ -101,7 +119,7 @@ internal class Service : BackgroundService
             Console.WriteLine($"Status: {status}");
         }
 
-        var area = _espClient!.GetAreaInformation("westerncape-14-parklands");
+        var area = _espClient!.GetAreaInformation(Config.AreaId!);
         if (area is not null &&
             (oldArea is null || area != oldArea))
         {
@@ -120,47 +138,35 @@ internal class Service : BackgroundService
         }
     }
 
-    private bool HasEspClient() => _espClient != null;
-
-    private static EspClient CheckLicenceKeyAndResetClient(EspClient? current)
+    private static EspClient? CheckLicenceKeyAndResetClient(EspClient? current)
     {
-        var licenceKey = LoadLicenceKey();
-
         if (current is not null)
         {
-            if (!current.LicenceKeyMatches(licenceKey!))
+            if (!Config.IsValid())
             {
-                current.SetLicenceKey(licenceKey!);
-                return current;
+                current.Dispose();
+                return null;
             }
+
+            if (!current.LicenceKeyMatches(Config.LicenceKey!))
+            {
+                current.SetLicenceKey(Config.LicenceKey!);
+            }
+            return current;
         }
-        
-        var cache = new FileResponseCache("DISK");
-        var options = new EspClientOptions(licenceKey!)
+
+        var options = new EspClientOptions(Config.LicenceKey!)
         {
-            ResponseCache = cache,
+            ResponseCache = new FileResponseCache("DISK"),
         };
 
         return EspClient.Create(options);
     }
 
-    private static string? LoadLicenceKey()
-    {
-        var licenceKey = Environment.GetEnvironmentVariable(Constants.EnvironmentVarApiKey, EnvironmentVariableTarget.Machine);
-        if (licenceKey is not null)
-        {
-            if (!EspClient.ValidateLicenceKey(licenceKey, out _))
-            {
-                Console.WriteLine("Licence key in config is not valid");
-                return null;
-            }
-        }
-        return licenceKey;
-    }
-
     public override void Dispose()
     {
         base.Dispose();
-        _espClient.Dispose();
+        _espClient?.Dispose();
     }
 }
+

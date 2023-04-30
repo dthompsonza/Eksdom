@@ -1,73 +1,39 @@
 ﻿using Eksdom.Shared;
+using Microsoft.Extensions.Logging;
 
 namespace Eksdom.Client;
 
 public static class Planner
 {
-
-    // returns true if stage level > 0 and current area is being loadshed
-    public static bool? IsLoadshedding(this Status status, AreaOverrides @override)
-    {
-        var statusDetail = status.GetStatusDetail(@override);
-
-        return statusDetail is null ? null : statusDetail.StageLevel > 0;
-    }
-
-    public static (DateTimeOffset Starts, TimeSpan Length)? NextOrCurrentLoadshedding(this AreaInformation areaInformation,
-            Status status,
+    public static Event? NextOrCurrentLoadshedding(this AreaInformation areaInformation,
             AreaOverrides @override,
             DateTimeOffset? effectiveDate = null)
     {
-        var result = areaInformation.CalculateNextDate(status, @override, effectiveDate);
-        return result.current ?? result.next;
+        var (current, next) = areaInformation.CalculateNextDate(@override, effectiveDate);
+
+        return current ?? next ?? default;
     }
 
     private static
         (
-            (DateTimeOffset, TimeSpan)? current,
-            (DateTimeOffset, TimeSpan)? next
+            Event? current,
+            Event? next
         )
         CalculateNextDate(
             this AreaInformation areaInformation,
-            Status status,
             AreaOverrides @override,
             DateTimeOffset? effectiveDate = null)
     {
-        if (status.IsLoadshedding(@override).IsNullOrFalse())
-        {
-            return (null, null);
-        }
-
-        var statusDetail = status.GetStatusDetail(@override);
-        if (statusDetail is null)
-        {
-            return (null, null);
-        }
-
         effectiveDate ??= DateTimeOffset.Now;
 
         var currentEvent = areaInformation.Events
-            .Where(e => e.StageLevel == statusDetail.StageLevel)
-            .FirstOrDefault(e => e.Start < effectiveDate && e.End > effectiveDate);
-
-        (DateTimeOffset, TimeSpan)? current = null;
-        if (currentEvent is not null)
-        {
-            current = (currentEvent.Start, currentEvent.Length);
-        }
+            .SingleOrDefault(e => e.Start <= effectiveDate && e.End >= effectiveDate);
 
         var nextEvent = areaInformation.Events
-            .Where(e => e.StageLevel == statusDetail.StageLevel)
             .OrderBy(e => e.Start)
             .FirstOrDefault(e => e.Start > effectiveDate && e.End > effectiveDate);
 
-        (DateTimeOffset, TimeSpan)? next = null;
-        if (nextEvent is not null)
-        {
-            next = (nextEvent.Start, nextEvent.Length);
-        }
-
-        return (current, next);
+        return (currentEvent, nextEvent);
     }
 
     internal static StatusDetail GetStatusDetail(this Status status, AreaOverrides @override)

@@ -8,6 +8,7 @@ namespace Eksdom.SharedMemory;
 public sealed class SharedMemoryAccess : IDisposable
 {
     private const string MutexName = "Eksdom.SharedMemory.Mutex";
+    private const uint MemoryLimit = 104_857_600;
     private string _memoryName;
     private Dictionary<string, MemoryMappedFile> _mmfWriters;
 
@@ -42,27 +43,27 @@ public sealed class SharedMemoryAccess : IDisposable
         var file = new MemoryFile<T>(name, payload);
         var json = EksdomJsonSerializer.ToJson(file);
         var bytes = Encoding.UTF8.GetBytes(json);
-        if (bytes.Length > ushort.MaxValue)
+        
+        if (bytes.Length > MemoryLimit)
         {
-            throw new InvalidOperationException($"Cannot memory write '{name}', payload too large ({bytes.Length} b)");
+            throw new InvalidOperationException($"Cannot memory write '{name}', payload too large ({bytes.Length} bytes)");
         }
+        
         var buffer = AddLengthHeader(bytes);
-
         var mmf = GetOrCreateMemoryMappedFile(BuildMapName(name), buffer.Length);
-        
-        
         using var stream = mmf.CreateViewStream();
+        
         stream.Write(buffer, 0, buffer.Length);
         stream.Flush();
     }
 
     private static byte[] AddLengthHeader(byte[] buffer)
     {
-        ushort length = Convert.ToUInt16(buffer.Length);
-        byte[] result = new byte[length + 2];
+        var length = Convert.ToUInt32(buffer.Length);
+        byte[] result = new byte[length + 4];
 
-        Array.Copy(length.ToBytesHeader(), 0, result, 0, 2);
-        Array.Copy(buffer, 0, result, 2, length);
+        Array.Copy(length.ToBytesHeader(), 0, result, 0, 4);
+        Array.Copy(buffer, 0, result, 4, length);
 
         return result;
     }
@@ -124,12 +125,12 @@ public sealed class SharedMemoryAccess : IDisposable
         using var mmf = MemoryMappedFile.OpenExisting(mapName, MemoryMappedFileRights.ReadWrite);
         using var stream = mmf.CreateViewStream();
 
-        var streamLength = ushort.MaxValue;
-        var dataLength = (ushort)0;
+        var streamLength = MemoryLimit;
+        var dataLength = (uint)0;
         byte[] data = Array.Empty<byte>();
         var dataIndex = 0;
 
-        while (stream.Position < ushort.MaxValue)
+        while (stream.Position < MemoryLimit)
         {
             if (stream.Position >= streamLength)
             {
@@ -137,11 +138,16 @@ public sealed class SharedMemoryAccess : IDisposable
             }
             if (stream.Position == 0)
             {
-                var header = new byte[2];
-                var headerBytes = stream.Read(header, 0, 2);
-                dataLength = header.ToUshort();
-                streamLength = Convert.ToUInt16(dataLength + headerBytes);
+                var header = new byte[4];
+                var headerBytes = stream.Read(header, 0, 4);
+                dataLength = header.FromBytesHeader();
+                if (dataLength > MemoryLimit)
+                {
+                    throw new InvalidOperationException($"Memory file '{name}' too large to read from ({dataLength} bytes)");
+                }
+                streamLength = Convert.ToUInt32(dataLength + headerBytes);
                 data = new byte[dataLength];
+                dataIndex = 0;
             }
             var buffer = new byte[Math.Min(1024, (int)(streamLength - stream.Position))];
             var bytesRead = stream.Read(buffer, 0, buffer.Length);

@@ -8,11 +8,21 @@ public class ServiceInfo : SerializableMemoryFile, IEquatable<ServiceInfo>
 
     public string? NotRunningReason { get; }
 
-    public ServiceInfo(DateTimeOffset started, bool isRunning, string? notRunningReason)
+    public string? AreaId { get; }
+
+    public AreaOverrides? Override { get; }
+
+    public ServiceInfo(DateTimeOffset started, 
+        bool isRunning, 
+        string? notRunningReason,
+        string? areaId,
+        AreaOverrides? @override)
     {
         Started = started;
         IsRunning = isRunning;
         NotRunningReason = notRunningReason;
+        AreaId = areaId;
+        Override = @override;
     }
 
     public override bool Equals(object? obj)
@@ -30,7 +40,9 @@ public class ServiceInfo : SerializableMemoryFile, IEquatable<ServiceInfo>
 
         return Started.Equals(instance.Started) &&
             IsRunning == instance.IsRunning &&
-            NotRunningReason == instance.NotRunningReason;
+            NotRunningReason == instance.NotRunningReason &&
+            AreaId == instance.AreaId &&
+            Override == instance.Override;
     }
 
     public bool Equals(ServiceInfo? other)
@@ -43,7 +55,9 @@ public class ServiceInfo : SerializableMemoryFile, IEquatable<ServiceInfo>
         int hash = 17;
         hash = hash * 23 + Started.GetHashCode();
         hash = hash * 23 + IsRunning.GetHashCode();
-        hash = hash * 23 + NotRunningReason.GetHashCode();
+        hash = hash * 23 + NotRunningReason?.GetHashCode() ?? 0;
+        hash = hash * 23 + AreaId?.GetHashCode() ?? 0;
+        hash = hash * 23 + Override?.GetHashCode() ?? 0;
         return hash;
     }
 

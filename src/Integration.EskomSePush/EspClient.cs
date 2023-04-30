@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using Eksdom.Shared;
+using EnsureThat;
 
 namespace Eksdom.Client;
 
@@ -72,16 +73,21 @@ public sealed partial class EspClient : IDisposable
 
     public static bool ValidateLicenceKey(string licenceKey, out string? validatedKey)
     {
-        var pattern = @"^[a-fA-F0-9]{8}-[a-fA-F0-9]{8}-[a-fA-F0-9]{8}-[a-fA-F0-9]{8}$";
-        var testKey = licenceKey.Trim().ToUpperInvariant();
-        if (Regex.IsMatch(testKey, pattern))
-        {
-            validatedKey = testKey;
-            return true;
-        };
+        return licenceKey.ValidateLicenceKey(out validatedKey);
+    }
 
-        validatedKey = null;
-        return false;
+    private void CheckAndSetLicenceKeyWithHeaders(string licenceKey)
+    {
+        Ensure.That(licenceKey).IsNotNullOrEmpty();
+        _licenceKey = licenceKey;
+        _httpClient.DefaultRequestHeaders.Remove(Constants.Headers.Token);
+        _httpClient.DefaultRequestHeaders.Add(Constants.Headers.Token, licenceKey);
+    }
+
+    private void ClearLicenceKeyAndRemoveHeaders()
+    {
+        _licenceKey = null;
+        _httpClient.DefaultRequestHeaders.Remove(Constants.Headers.Token);
     }
 
     #endregion

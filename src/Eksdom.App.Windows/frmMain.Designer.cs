@@ -38,7 +38,6 @@
             menuStrip1 = new MenuStrip();
             menuToolStripMenuItem = new ToolStripMenuItem();
             aPIKeyToolStripMenuItem = new ToolStripMenuItem();
-            label1 = new Label();
             lblNextLoadshedding = new Label();
             statusStripMain.SuspendLayout();
             menuStrip1.SuspendLayout();
@@ -58,7 +57,7 @@
             // statusStripMain
             // 
             statusStripMain.Items.AddRange(new ToolStripItem[] { lblApiAllowance, lblServiceInfo });
-            statusStripMain.Location = new Point(0, 286);
+            statusStripMain.Location = new Point(0, 159);
             statusStripMain.Name = "statusStripMain";
             statusStripMain.Size = new Size(473, 22);
             statusStripMain.TabIndex = 0;
@@ -102,32 +101,23 @@
             aPIKeyToolStripMenuItem.Text = "Config ...";
             aPIKeyToolStripMenuItem.Click += aPIKeyToolStripMenuItem_Click;
             // 
-            // label1
-            // 
-            label1.AutoSize = true;
-            label1.Location = new Point(29, 57);
-            label1.Name = "label1";
-            label1.Size = new Size(107, 15);
-            label1.TabIndex = 2;
-            label1.Text = "Next loadshedding";
-            // 
             // lblNextLoadshedding
             // 
             lblNextLoadshedding.BorderStyle = BorderStyle.FixedSingle;
             lblNextLoadshedding.Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point);
-            lblNextLoadshedding.Location = new Point(54, 90);
+            lblNextLoadshedding.Location = new Point(12, 40);
             lblNextLoadshedding.Name = "lblNextLoadshedding";
-            lblNextLoadshedding.Size = new Size(359, 102);
+            lblNextLoadshedding.Size = new Size(449, 102);
             lblNextLoadshedding.TabIndex = 3;
             lblNextLoadshedding.Text = "--";
+            lblNextLoadshedding.TextAlign = ContentAlignment.MiddleCenter;
             // 
             // frmMain
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(473, 308);
+            ClientSize = new Size(473, 181);
             Controls.Add(lblNextLoadshedding);
-            Controls.Add(label1);
             Controls.Add(statusStripMain);
             Controls.Add(menuStrip1);
             Icon = (Icon)resources.GetObject("$this.Icon");
@@ -154,7 +144,6 @@
         private ToolStripMenuItem menuToolStripMenuItem;
         private ToolStripMenuItem aPIKeyToolStripMenuItem;
         private ToolStripStatusLabel lblServiceInfo;
-        private Label label1;
         private Label lblNextLoadshedding;
     }
 }
