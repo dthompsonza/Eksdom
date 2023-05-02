@@ -4,7 +4,7 @@ namespace Eksdom.Client.Caching;
 
 public interface IResponseCache : IDisposable
 {
-    public string PartitionKey { get; init; }
+    public string Name { get; init; }
 
     /// <summary>
     /// Add item to the cache

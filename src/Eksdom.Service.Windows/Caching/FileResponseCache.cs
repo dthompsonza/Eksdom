@@ -12,8 +12,8 @@ internal sealed class FileResponseCache : MemoryResponseCache
 {
     private readonly object _lockObject = new object();
 
-    public FileResponseCache(string? partitionKey, ILogger<FileResponseCache>? logger = null)
-        : base(cacheDuration: null, partitionKey, logger) 
+    public FileResponseCache(string? name, ILogger<FileResponseCache>? logger = null)
+        : base(cacheDuration: null, name, logger) 
     {
     }
 
@@ -40,7 +40,7 @@ internal sealed class FileResponseCache : MemoryResponseCache
     public override void Clear()
     {
         var directoryInfo = new DirectoryInfo(Path.GetTempPath());
-        var jsonFiles = directoryInfo.GetFiles($"{PartitionKey}*.json", SearchOption.TopDirectoryOnly);
+        var jsonFiles = directoryInfo.GetFiles($"{Name}*.json", SearchOption.TopDirectoryOnly);
 
         lock(_lockObject)
         {
@@ -71,7 +71,7 @@ internal sealed class FileResponseCache : MemoryResponseCache
         }
 
         var json = JsonSerializer.Serialize(item);
-        var filename = BuildFilename<TResponse>(key, PartitionKey);
+        var filename = BuildFilename<TResponse>(key, Name);
 
         lock (_lockObject)
         {
@@ -89,7 +89,7 @@ internal sealed class FileResponseCache : MemoryResponseCache
 
     private TResponse? ReadCacheFile<TResponse>(string key, out TimeSpan cacheAge)
     {
-        var filename = BuildFilename<TResponse>(key, PartitionKey);
+        var filename = BuildFilename<TResponse>(key, Name);
         
         if (!File.Exists(filename))
         {
@@ -121,9 +121,9 @@ internal sealed class FileResponseCache : MemoryResponseCache
         return item is null ? default : item;
     }
 
-    private static string BuildFilename<TResponse>(string key, string partitionKey)
+    private static string BuildFilename<TResponse>(string key, string cacheName)
     {
-        var filename = Path.Combine(Path.GetTempPath(), $"{AppDomain.CurrentDomain.FriendlyName}-{partitionKey}-{typeof(TResponse).Name}-{key}.json");
+        var filename = Path.Combine(Path.GetTempPath(), $"{AppDomain.CurrentDomain.FriendlyName}-{cacheName}-{typeof(TResponse).Name}-{key}.json");
         return filename;
     }
 

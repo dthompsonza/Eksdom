@@ -12,17 +12,17 @@ public class MemoryResponseCache : IResponseCache
     private readonly MemoryCache _memoryCache;
     private readonly TimeSpan _cacheDuration;
 
-    public string PartitionKey { get; init; }
+    public string Name { get; init; }
 
     public ILogger<MemoryResponseCache> Logger { get; init; }
 
     public MemoryResponseCache(TimeSpan? cacheDuration, 
-        string? partitionKey = null,
+        string? name = null,
         ILogger<MemoryResponseCache>? logger = null)
     {
         _memoryCache = new MemoryCache(new MemoryCacheOptions());
         _cacheDuration = cacheDuration ?? TimeSpan.FromHours(Constants.DefaultCacheHours);
-        PartitionKey = partitionKey ?? "NONE";
+        Name = name ?? "NONE";
         Logger = logger ?? LoggerFactory.Create(builder =>
         {
             builder.AddConsole();
